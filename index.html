@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Formulir DTSEN Lengkap</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9',
+                            600: '#0284c7', 700: '#0369a1', 900: '#0c4a6e',
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 24px -6px rgba(0, 0, 0, 0.05)',
+                        'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)',
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #f8fafc; }
+        input, select, textarea, button { transition: all 0.25s ease; }
+        input:focus, select:focus, textarea:focus { outline: none; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .form-radio:checked { background-color: #0284c7; border-color: #0284c7; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .intro-scroll { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+        .validation-invalid { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important; }
+        .validation-invalid-group { outline: 2px solid #ef4444; outline-offset: 3px; border-radius: 0.75rem; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased h-screen flex flex-col overflow-hidden selection:bg-brand-100 selection:text-brand-700 relative">
+<!-- Halaman pembuka sebelum masuk ke pertanyaan DTSEN -->
+<div class="intro-scroll fixed inset-0 z-[100] overflow-y-auto px-4 py-8 md:py-12 bg-slate-900" id="intro-page">
+<div class="fixed inset-0 pointer-events-none bg-center bg-cover bg-no-repeat" style="background-image: url('intro-bg.webp');"></div>
+<div class="fixed inset-0 pointer-events-none bg-slate-950/55"></div>
+<div class="relative z-10 max-w-3xl mx-auto min-h-full flex items-center justify-center">
+<div class="w-full bg-white/95 rounded-3xl shadow-soft border border-white/40 overflow-hidden">
+<div class="bg-brand-900/95 px-6 py-7 md:px-9 md:py-9 text-white">
+<div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-5">
+<i class="ph-bold ph-database text-2xl"></i>
+</div>
+<p class="text-xs font-semibold uppercase tracking-[0.18em] text-brand-100 mb-2">Formulir DTSEN 2026</p>
+<h1 class="text-2xl md:text-3xl font-bold leading-tight">Data usulan DTSEN Kelurahan Dunguscariang tahun 2026</h1>
+</div>
+<div class="p-6 md:p-9 space-y-6">
+<div class="rounded-2xl border border-white/15 bg-slate-950/70 p-5 md:p-6 shadow-inner">
+<p class="text-sm md:text-base text-white/95 leading-8 font-medium">
+                            Data ini digunakan untuk melengkapi persyaratan usulan dan pembaruan Data Terpadu Sosial Ekonomi Nasional (DTSEN) yang dilakukan oleh puskesos kelurahan dunguscariang menggunakan aplikasi siks online.
+                        </p>
+</div>
+<div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 md:p-6">
+<div class="flex items-center gap-2 text-amber-800 font-bold mb-4">
+<i class="ph-fill ph-warning-circle text-xl"></i>
+<span>*catatan :</span>
+</div>
+<ol class="list-decimal pl-5 space-y-3 text-sm md:text-base text-slate-700 leading-7">
+<li>Pihak Puskesos Kelurahan hanya dapat melakukan pengajuan usulan dan pembaruan data melalui aplikasi, sedangkan update dan penggunaan data sepenuhnya kewenangan dari kementrian.</li>
+<li>Usulan DTSEN di proses oleh pihak kelurahan setiap bulan dan akan di kirim ke dinas Sosial Kota Bandung untuk di proses oleh kementrian sosial sambil menunggu surat keputusan penetapan DTSEN terbaru.</li>
+<li>Kami tidak dapat memproses data yang tidak sesuai dan data selain warga kelurahan Dunguscariang, silakan menghubungi puskesos kelurahan sesuai dengan administrasi kependudukan dalam kartu keluarga.</li>
+</ol>
+</div>
+<button class="w-full bg-brand-600 text-white font-semibold py-4 px-6 rounded-xl hover:bg-brand-700 active:scale-[0.99] flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20" id="btn-start-form" type="button">
+                        Mulai Pengisian <i class="ph-bold ph-arrow-right"></i>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-[140] w-[calc(100%-2rem)] max-w-md rounded-2xl bg-red-600 text-white shadow-2xl px-5 py-4" id="validation-toast">
+<div class="flex items-start gap-3">
+<i class="ph-fill ph-warning-circle text-2xl shrink-0"></i>
+<div>
+<p class="font-bold">Semua data harus diisi</p>
+<p class="text-sm text-red-50 mt-0.5" id="validation-toast-detail">Lengkapi semua pertanyaan sebelum melanjutkan.</p>
+</div>
+</div>
+</div>
+<header class="hidden bg-white/90 backdrop-blur-md z-30 relative w-full border-b border-slate-200 shadow-sm shrink-0" id="form-header">
+<div class="px-4 py-4 max-w-3xl mx-auto flex items-center gap-3">
+<div class="w-10 h-10 bg-brand-900 text-white rounded-xl flex items-center justify-center shadow-md">
+<i class="ph-bold ph-database text-xl"></i>
+</div>
+<div>
+<h1 class="text-lg font-bold text-slate-900 leading-tight tracking-tight">DTSEN 2026</h1>
+<p class="text-[11px] text-slate-500 font-medium tracking-wide uppercase">Data Tunggal Sosial &amp; Ekonomi Nasional</p>
+</div>
+</div>
+<!-- [TAMBAHAN]: Segmented Tab Navigation -->
+<div class="px-4 pb-3 max-w-3xl mx-auto flex gap-2 overflow-x-auto no-scrollbar">
+<button class="nav-tab shrink-0 flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-slate-900 text-white shadow-md" data-target="sec-1">
+                Keluarga <i class="ph-bold ph-caret-down text-xs opacity-70"></i>
+</button>
+<button class="nav-tab shrink-0 flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold text-slate-500 bg-transparent hover:bg-slate-100" data-target="sec-2">
+                SosEk <i class="ph-bold ph-caret-down text-xs opacity-70"></i>
+</button>
+<button class="nav-tab shrink-0 flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold text-slate-500 bg-transparent hover:bg-slate-100" data-target="sec-3">
+                Aset <i class="ph-bold ph-caret-down text-xs opacity-70"></i>
+</button>
+<button class="nav-tab shrink-0 flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold text-slate-500 bg-transparent hover:bg-slate-100" data-target="sec-4">
+                Anggota <i class="ph-bold ph-caret-down text-xs opacity-70"></i>
+</button>
+<button class="nav-tab shrink-0 flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold text-slate-500 bg-transparent hover:bg-slate-100" data-target="sec-5">
+                Dokumen <i class="ph-bold ph-caret-down text-xs opacity-70"></i>
+</button>
+</div>
+</header>
+<main class="hidden flex-1 overflow-y-auto px-4 py-6 pb-32" id="form-main">
+<div class="max-w-3xl mx-auto space-y-8" id="dtsen-form">
+<div class="mb-2">
+<h2 class="text-2xl font-bold text-slate-900 tracking-tight mb-2">Formulir Pendataan Terpadu</h2>
+<p class="text-sm text-slate-500 leading-relaxed max-w-2xl">Lengkapi data sesuai kondisi faktual. Gunakan tab navigasi di atas untuk berpindah halaman form.</p>
+<div class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-3 text-sm text-red-800">
+<i class="ph-fill ph-warning-circle text-lg mt-0.5 shrink-0"></i>
+<div><strong>Semua data wajib diisi.</strong> Jika suatu data tidak ada atau tidak berlaku, isi <strong>“Tidak ada”</strong> atau <strong>0</strong> sesuai jenis kolom.</div>
+</div>
+</div>
+<!-- ========================================== -->
+<!-- BAGIAN 1: IDENTITAS KELUARGA               -->
+<!-- ========================================== -->
+<section class="space-y-6 block" id="sec-1">
+<div class="flex items-center gap-3 border-b-2 border-slate-200 pb-2">
+<span class="w-8 h-8 rounded-lg bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm">01</span>
+<h3 class="text-xl font-bold text-slate-800">Identitas Keluarga</h3>
+</div>
+<div class="bg-white rounded-2xl shadow-soft p-5 md:p-7 border border-slate-100 space-y-5">
+<h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider mb-4 flex items-center gap-2"><i class="ph-fill ph-identification-card text-lg"></i> Data Utama</h4>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">1. Nama Kepala Keluarga</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 placeholder-slate-400" name="nama_kepala_keluarga" required="" type="text"/>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">2. NIK Kepala Keluarga</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 placeholder-slate-400" name="nik_kepala_keluarga" required="" type="number"/>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">3. Nomor Kartu Keluarga (KK)</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 placeholder-slate-400" name="no_kk" required="" type="number"/>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">4. Jumlah Anggota Keluarga</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 placeholder-slate-400" name="jumlah_anggota_keluarga" required="" type="number"/>
+</div>
+</div>
+<div class="border-t border-slate-100 my-6"></div>
+<h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider mb-4 flex items-center gap-2"><i class="ph-fill ph-map-pin-line text-lg"></i> Lokasi Tempat Tinggal</h4>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">5. Provinsi</label>
+<input class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium cursor-not-allowed" name="provinsi" required="" readonly type="text" value="JAWA BARAT"/>
+<p class="text-[11px] text-slate-400 mt-1.5">Wilayah sudah ditetapkan.</p>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">6. Kabupaten/Kota</label>
+<input class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium cursor-not-allowed" name="kabupaten_kota" required="" readonly type="text" value="KOTA BANDUNG"/>
+<p class="text-[11px] text-slate-400 mt-1.5">Wilayah sudah ditetapkan.</p>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">7. Kecamatan</label>
+<input class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium cursor-not-allowed" name="kecamatan" required="" readonly type="text" value="ANDIR"/>
+<p class="text-[11px] text-slate-400 mt-1.5">Wilayah sudah ditetapkan.</p>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">8. Desa/Kelurahan</label>
+<input class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium cursor-not-allowed" name="desa_kelurahan" required="" readonly type="text" value="DUNGUSCARIANG"/>
+<p class="text-[11px] text-slate-400 mt-1.5">Wilayah sudah ditetapkan.</p>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">9. Kode Pos</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="kode_pos" required="" type="number"/>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">10. RT/RW/Dusun</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="rt_rw_dusun" placeholder="Contoh: RT 01 / RW 02" required="" type="text"/>
+</div>
+<div class="md:col-span-2">
+<label class="block font-medium text-slate-700 text-sm mb-2">11. Alamat Lengkap (Dusun/Perumahan/Patokan)</label>
+<textarea class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none" name="alamat_lengkap" required="" rows="2"></textarea>
+</div>
+<!-- [TAMBAHAN]: Memisahkan Nama Jalan -->
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">12. Nama Jalan</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="nama_jalan" required="" type="text"/>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">13. Nomor Rumah</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="nomor_rumah" required="" type="text"/>
+</div>
+<div class="md:col-span-2">
+<label class="block font-medium text-slate-700 text-sm mb-3">14. Alamat Sesuai dengan Kartu Keluarga?</label>
+<div aria-required="true" class="flex gap-2 radio-group" data-name="sesuai_kk">
+<button class="pill px-6 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-6 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+</div>
+</div>
+<div class="mt-6 p-4 md:p-5 border border-slate-200 rounded-xl bg-slate-50 space-y-4">
+<div class="flex items-center justify-between flex-wrap gap-4">
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-1">15. Titik Lokasi Koordinat (Geotagging)</label>
+<p class="text-xs text-slate-500">Ambil otomatis melalui GPS atau isi Latitude dan Longitude secara manual.</p>
+</div>
+<button class="bg-white border border-brand-200 text-brand-600 font-medium px-4 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-brand-50 shadow-sm" id="btn-geo" type="button">
+<i class="ph-bold ph-crosshair"></i> Ambil Koordinat GPS
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2" for="manual-latitude">Latitude</label>
+<input id="manual-latitude" name="latitude" type="number" step="any" min="-90" max="90" required placeholder="Contoh: -6.912552906600921" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10"/>
+<p class="text-[11px] text-slate-400 mt-1.5">Rentang -90 sampai 90.</p>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2" for="manual-longitude">Longitude</label>
+<input id="manual-longitude" name="longitude" type="number" step="any" min="-180" max="180" required placeholder="Contoh: 107.574826" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10"/>
+<p class="text-[11px] text-slate-400 mt-1.5">Rentang -180 sampai 180.</p>
+</div>
+</div>
+<p id="geo-status" class="text-xs text-slate-500">Koordinat belum diisi.</p>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- BAGIAN 2: SOSIAL EKONOMI                   -->
+<!-- ========================================== -->
+<section class="space-y-6 hidden" id="sec-2">
+<div class="flex items-center gap-3 border-b-2 border-slate-200 pb-2">
+<span class="w-8 h-8 rounded-lg bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm">02</span>
+<h3 class="text-xl font-bold text-slate-800">Sosial Ekonomi Keluarga</h3>
+</div>
+<div class="bg-white rounded-2xl shadow-soft p-5 md:p-7 border border-slate-100 space-y-6">
+<h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider mb-2 flex items-center gap-2"><i class="ph-fill ph-house text-lg"></i> Fisik Bangunan</h4>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">1. Jenis bangunan tempat tinggal?</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="jenis_bangunan" required="">
+<option value="">Pilih...</option>
+<option>Rumah Tunggal</option>
+<option>Rumah Deret/Kopel</option>
+<option>Apartemen/Rumah Susun</option>
+<option>Lainnya</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">2. Status kepemilikan bangunan?</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="status_kepemilikan_bangunan" required="">
+<option value="">Pilih...</option>
+<option>Milik Sendiri</option>
+<option>Kontrak/Sewa</option>
+<option>Bebas Sewa</option>
+<option>Dinas</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">3. Apakah anda tinggal bersama anggota keluarga yang lain (yang berbeda kartu keluarga)?</label>
+<div aria-required="true" class="flex gap-2 radio-group" data-name="ada_keluarga_lain">
+<button class="pill px-6 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-6 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">4. Berapa orang yang tinggal di rumah ini?</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="jumlah_orang_tinggal" placeholder="Jumlah orang" required="" type="number"/>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">5. Bukti kepemilikan tanah/bangunan?</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="bukti_kepemilikan" required="">
+<option>SHM (Sertifikat Hak Milik)</option>
+<option>SHGB / SHSRS</option>
+<option>Girik / Letter C</option>
+<option>Tidak Punya Bukti</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">6. Luas lantai bangunan (m²)</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="luas_lantai_m2" placeholder="Contoh: 36" required="" type="number"/>
+</div>
+<!-- [TAMBAHAN]: Atap, Dinding, Lantai -->
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">7. Jenis Atap Utama</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="jenis_atap" required="">
+<option value="">Pilih...</option>
+<option>Beton/Genteng</option>
+<option>Seng/Asbes</option>
+<option>Bambu/Daun/Jerami</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">8. Jenis Dinding Utama</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="jenis_dinding" required="">
+<option value="">Pilih...</option>
+<option>Tembok/Semen</option>
+<option>Kayu/Papan</option>
+<option>Bambu/Anyaman</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">9. Jenis Lantai Utama</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="jenis_lantai" required="">
+<option value="">Pilih...</option>
+<option>Keramik/Marmer</option>
+<option>Semen/Bata Merah</option>
+<option>Tanah/Papan Kayu</option>
+</select>
+</div>
+</div>
+<div class="border-t border-slate-100 my-6"></div>
+<h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider mb-2 flex items-center gap-2"><i class="ph-fill ph-drop text-lg"></i> Sanitasi &amp; Utilitas</h4>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">10. Fasilitas buang air besar (BAB)?</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="fasilitas_bab" required="">
+<option>Milik Sendiri</option>
+<option>Bersama/MCK Komunal</option>
+<option>Umum</option>
+<option>Tidak Ada Fasilitas</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">11. Tempat pembuangan akhir tinja?</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="pembuangan_akhir_tinja" required="">
+<option>Tangki Septik (Septic Tank)</option>
+<option>IPAL / SPAL</option>
+<option>Lubang Tanah</option>
+<option>Sungai / Danau / Laut</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">12. Sumber air minum utama?</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="sumber_air_minum" required="">
+<option>Air Kemasan Bermerk</option>
+<option>Air Isi Ulang</option>
+<option>Leding (PAM)</option>
+<option>Sumur Bor/Pompa</option>
+<option>Sumur Terlindung</option>
+</select>
+</div>
+<!-- [TAMBAHAN]: Air Mandi & Bahan Bakar -->
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">13. Sumber air mandi/cuci utama?</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="sumber_air_mandi" required="">
+<option>Leding (PAM)</option>
+<option>Sumur Pompa/Bor</option>
+<option>Mata Air Terlindung</option>
+<option>Sungai/Danau</option>
+</select>
+</div>
+<div class="md:col-span-2">
+<label class="block font-medium text-slate-700 text-sm mb-3">14. Sumber penerangan utama?</label>
+<div aria-required="true" class="flex flex-wrap gap-2 radio-group" data-name="sumber_penerangan">
+<button class="pill px-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="Listrik PLN 450 Watt" type="button">PLN 450 Watt</button>
+<button class="pill px-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="Listrik PLN &gt; 450 Watt (Meteran)" type="button">PLN &gt; 450 Watt</button>
+<button class="pill px-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="Listrik PLN (Tanpa Meteran)" type="button">PLN Tanpa Meteran</button>
+<button class="pill px-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="Bukan Listrik" type="button">Bukan Listrik</button>
+</div>
+</div>
+<div class="md:col-span-2">
+<label class="block font-medium text-slate-700 text-sm mb-3">15. Bahan bakar utama untuk memasak?</label>
+<div aria-required="true" class="flex flex-wrap gap-2 radio-group" data-name="bahan_bakar_memasak">
+<button class="pill px-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="Gas LPG" type="button">Gas LPG</button>
+<button class="pill px-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="Listrik" type="button">Listrik</button>
+<button class="pill px-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="Minyak Tanah" type="button">Minyak Tanah</button>
+<button class="pill px-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="Kayu Bakar" type="button">Kayu Bakar</button>
+</div>
+</div>
+</div>
+<div class="border-t border-slate-100 my-6"></div>
+<h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider mb-2 flex items-center gap-2"><i class="ph-fill ph-wallet text-lg"></i> Pengeluaran &amp; Pendapatan</h4>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<div class="relative">
+<label class="block font-medium text-slate-700 text-sm mb-2">16. Pengeluaran Listrik (Sebulan)</label>
+<div class="absolute bottom-3 left-4 text-slate-400 text-sm font-medium">Rp</div>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-sm" name="pengeluaran_listrik" placeholder="0" required="" type="number"/>
+</div>
+<div class="relative">
+<label class="block font-medium text-slate-700 text-sm mb-2">17. Pengeluaran Pulsa (Sebulan)</label>
+<div class="absolute bottom-3 left-4 text-slate-400 text-sm font-medium">Rp</div>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-sm" name="pengeluaran_pulsa" placeholder="0" required="" type="number"/>
+</div>
+<div class="relative">
+<label class="block font-medium text-slate-700 text-sm mb-2">18. Pengeluaran Makanan (Seminggu)</label>
+<div class="absolute bottom-3 left-4 text-slate-400 text-sm font-medium">Rp</div>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-sm" name="pengeluaran_makanan_mingguan" placeholder="0" required="" type="number"/>
+</div>
+<!-- [TAMBAHAN]: Pengeluaran Non-Makanan -->
+<div class="relative">
+<label class="block font-medium text-slate-700 text-sm mb-2">19. Pengeluaran Non-Makanan Lain (Sebulan)</label>
+<div class="absolute bottom-3 left-4 text-slate-400 text-sm font-medium">Rp</div>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-sm" name="pengeluaran_non_makanan_bulanan" placeholder="0" required="" type="number"/>
+</div>
+<div class="relative md:col-span-2">
+<label class="block font-medium text-slate-700 text-sm mb-2">20. Total Pendapatan Keluarga (Sebulan)</label>
+<div class="absolute bottom-3 left-4 text-slate-400 text-sm font-medium">Rp</div>
+<input class="w-full bg-brand-50 border border-brand-200 rounded-xl pl-12 pr-4 py-3 text-sm focus:border-brand-500" name="total_pendapatan_bulanan" placeholder="0" required="" type="number"/>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-2xl shadow-soft p-5 md:p-7 border border-slate-100 space-y-6">
+<h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider mb-2 flex items-center gap-2"><i class="ph-fill ph-list-checks text-lg"></i> Indikator Tambahan Form DTSEN 2026</h4>
+<p class="text-xs text-slate-500">Pertanyaan berikut ditambahkan dari formulir DTSEN DC 2026 yang belum terwakili oleh field yang sudah ada.</p>
+<div class="space-y-5">
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">Apakah anda memiliki tempat berteduh tetap sehari-hari?</label>
+<div aria-required="true" class="flex gap-2 radio-group" data-name="memiliki_tempat_berteduh_tetap"><button class="pill px-5 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="true" type="button">Ya</button><button class="pill px-5 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">Apakah kepala keluarga atau pengurus keluarga masih bekerja?</label>
+<div aria-required="true" class="flex gap-2 radio-group" data-name="kepala_pengurus_masih_bekerja"><button class="pill px-5 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="true" type="button">Ya</button><button class="pill px-5 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">Apakah anda pernah khawatir atau pernah tidak makan dalam setahun terakhir?</label>
+<div aria-required="true" class="flex gap-2 radio-group" data-name="khawatir_tidak_makan_setahun"><button class="pill px-5 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="true" type="button">Ya</button><button class="pill px-5 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">Apakah pengeluaran pangan lebih besar (&gt;70%) dari total pengeluaran?</label>
+<div aria-required="true" class="flex gap-2 radio-group" data-name="pengeluaran_pangan_lebih_70"><button class="pill px-5 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="true" type="button">Ya</button><button class="pill px-5 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">Apakah ada pengeluaran untuk pakaian selama 1 (satu) tahun terakhir?</label>
+<div aria-required="true" class="flex gap-2 radio-group" data-name="ada_pengeluaran_pakaian_setahun"><button class="pill px-5 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="true" type="button">Ya</button><button class="pill px-5 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<div class="relative md:col-span-2">
+<label class="block font-medium text-slate-700 text-sm mb-2">Rata-rata pengeluaran internet seluruh anggota keluarga dalam sebulan</label>
+<div class="absolute bottom-3 left-4 text-slate-400 text-sm font-medium">Rp</div>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-sm" name="pengeluaran_internet_bulanan" placeholder="0" required="" type="number"/>
+</div>
+<div class="md:col-span-2 border-t border-slate-100 pt-5 mt-1">
+<h5 class="text-sm font-bold text-slate-800 mb-4">Kepemilikan Daya Listrik</h5>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">Nomor Langganan / ID Pelanggan</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" inputmode="numeric" name="nomor_langganan_listrik" placeholder="Masukkan nomor langganan" required="" type="text"/>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">Nomor Meter</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" inputmode="numeric" name="nomor_meter_listrik" placeholder="Masukkan nomor meter" required="" type="text"/>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">Besar Daya (VA)</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" min="0" name="besar_daya_listrik_va" placeholder="Contoh: 450" required="" type="number"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- BAGIAN 3: KEPEMILIKAN ASET                 -->
+<!-- ========================================== -->
+<section class="space-y-6 hidden" id="sec-3">
+<div class="flex items-center gap-3 border-b-2 border-slate-200 pb-2">
+<span class="w-8 h-8 rounded-lg bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm">03</span>
+<h3 class="text-xl font-bold text-slate-800">Kepemilikan Aset</h3>
+</div>
+<div class="bg-white rounded-2xl shadow-soft p-5 border border-slate-100 divide-y divide-slate-100">
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="tabung_gas_3kg">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-cylinder text-lg"></i></div>
+<span class="font-medium text-slate-700 text-sm">1. Tabung Gas 3 KG</span>
+</div>
+<div class="flex items-center gap-4">
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group asset-toggle" data-name="kepemilikan" data-target="asset-qty-gas3">
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+<input class="hidden w-20 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm" id="asset-qty-gas3" name="jumlah" placeholder="Jml" type="number"/>
+</div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="tabung_gas_55kg_atau_lebih">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-cylinder text-lg"></i></div>
+<span class="font-medium text-slate-700 text-sm">2. Tabung Gas 5,5 KG atau Lebih</span>
+</div>
+<div class="flex items-center gap-4">
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group asset-toggle" data-name="kepemilikan" data-target="asset-qty-1">
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+<input class="hidden w-20 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm" id="asset-qty-1" name="jumlah" placeholder="Jml" type="number"/>
+</div>
+</div>
+<!-- [TAMBAHAN]: TV -->
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="televisi">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-television text-lg"></i></div>
+<span class="font-medium text-slate-700 text-sm">3. Televisi Layar Datar</span>
+</div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan">
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="kulkas">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-monitor text-lg"></i></div>
+<span class="font-medium text-slate-700 text-sm">4. Lemari Es / Kulkas</span>
+</div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan">
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="ac">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-wind text-lg"></i></div>
+<span class="font-medium text-slate-700 text-sm">5. AC (Air Conditioner)</span>
+</div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan">
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+</div>
+<!-- [TAMBAHAN]: Laptop/Komputer -->
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="komputer_laptop">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-laptop text-lg"></i></div>
+<span class="font-medium text-slate-700 text-sm">6. Komputer / Laptop / Tablet</span>
+</div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan">
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+</div>
+<!-- [TAMBAHAN]: Sepeda -->
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="sepeda">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-bicycle text-lg"></i></div>
+<span class="font-medium text-slate-700 text-sm">7. Sepeda</span>
+</div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan">
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="motor">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-motorcycle text-lg"></i></div>
+<span class="font-medium text-slate-700 text-sm">8. Sepeda Motor</span>
+</div>
+<div class="flex items-center gap-4">
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group asset-toggle" data-name="kepemilikan" data-target="asset-qty-7">
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+<input class="hidden w-20 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm" id="asset-qty-7" name="jumlah" placeholder="Jml" type="number"/>
+</div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="mobil">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-car text-lg"></i></div>
+<span class="font-medium text-slate-700 text-sm">9. Mobil</span>
+</div>
+<div class="flex items-center gap-4">
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group asset-toggle" data-name="kepemilikan" data-target="asset-qty-8">
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+<input class="hidden w-20 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm" id="asset-qty-8" name="jumlah" placeholder="Jml" type="number"/>
+</div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="telepon_rumah_pstn">
+<div class="flex items-center gap-3"><div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-phone text-lg"></i></div><span class="font-medium text-slate-700 text-sm">10. Telepon Rumah (PSTN)</span></div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan"><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="emas">
+<div class="flex items-center gap-3"><div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-coins text-lg"></i></div><span class="font-medium text-slate-700 text-sm">11. Emas</span></div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan"><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="kapal_perahu_motor">
+<div class="flex items-center gap-3"><div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-boat text-lg"></i></div><span class="font-medium text-slate-700 text-sm">12. Kapal / Perahu Motor</span></div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan"><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="pemanas_air">
+<div class="flex items-center gap-3"><div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-thermometer-hot text-lg"></i></div><span class="font-medium text-slate-700 text-sm">13. Pemanas Air (Water Heater)</span></div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan"><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="perahu">
+<div class="flex items-center gap-3"><div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-sailboat text-lg"></i></div><span class="font-medium text-slate-700 text-sm">14. Perahu</span></div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan"><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="smartphone">
+<div class="flex items-center gap-3"><div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-device-mobile text-lg"></i></div><span class="font-medium text-slate-700 text-sm">15. Smartphone</span></div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan"><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button><button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 asset-row" data-aset="rumah_lahan_lainnya">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600"><i class="ph-fill ph-map-trifold text-lg"></i></div>
+<span class="font-medium text-slate-700 text-sm">16. Rumah/Lahan Lainnya</span>
+</div>
+<div aria-required="true" class="flex gap-1 bg-slate-100 p-1 rounded-lg radio-group" data-name="kepemilikan">
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="true" type="button">Ya</button>
+<button class="pill px-4 py-1.5 text-xs rounded-md text-slate-500 font-medium" data-val="false" type="button">Tidak</button>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- BAGIAN 4: ANGGOTA KELUARGA                 -->
+<!-- ========================================== -->
+<section class="space-y-6 hidden" id="sec-4">
+<div class="flex items-center gap-3 border-b-2 border-slate-200 pb-2">
+<span class="w-8 h-8 rounded-lg bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm">04</span>
+<div>
+<h3 class="text-xl font-bold text-slate-800 leading-none">Keterangan Anggota Keluarga</h3>
+<p class="text-xs text-slate-500 mt-1">Data rinci per individu (pendidikan, pekerjaan, disabilitas).</p>
+</div>
+</div>
+<div class="sticky top-2 z-20 flex justify-end">
+<button class="inline-flex items-center justify-center gap-1.5 border border-brand-200 bg-white text-brand-700 font-medium text-xs md:text-sm py-2 px-3 rounded-lg hover:bg-brand-50 hover:border-brand-300 transition-colors shadow-sm" id="btn-add-member" type="button">
+<i class="ph-bold ph-user-plus text-base"></i> Tambah Anggota
+</button>
+</div>
+<div class="space-y-6" id="members-container">
+<!-- Statik Anggota #1 -->
+<div class="bg-white border border-slate-200 rounded-2xl shadow-soft overflow-hidden relative member-card" data-urutan="1">
+<div class="absolute top-0 left-0 w-1.5 h-full bg-brand-500"></div>
+<div class="p-4 bg-slate-50 border-b border-slate-100 pl-6 flex justify-between items-center">
+<div class="flex items-center gap-3">
+<i class="ph-duotone ph-user-circle text-3xl text-brand-600"></i>
+<div>
+<h4 class="font-bold text-slate-800">Anggota Keluarga #1</h4>
+<span class="text-[10px] bg-brand-100 text-brand-700 px-2 py-0.5 rounded uppercase font-bold">Kepala Keluarga</span>
+</div>
+</div>
+</div>
+<div class="p-6 space-y-6 pl-7">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">1. Nama Lengkap</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:border-brand-500" name="nama_lengkap" placeholder="Nama anggota..." required="" type="text"/>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">2. Jenis Kelamin</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="jenis_kelamin" required="">
+<option value="">Pilih...</option>
+<option>Laki-Laki</option>
+<option>Perempuan</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">3. Status Hubungan</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="status_hubungan_kepala_keluarga" required="">
+<option>Kepala Keluarga</option>
+<option>Istri/Suami</option>
+<option>Anak</option>
+<option>Menantu</option>
+<option>Cucu</option>
+<option>Lainnya</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">4. Status Partisipasi Sekolah</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="status_partisipasi_sekolah" required="">
+<option value="">Pilih...</option>
+<option>Tidak/Belum Pernah Sekolah</option>
+<option>Masih Sekolah</option>
+<option>Tidak Bersekolah Lagi</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">5. Ijazah/STTB Tertinggi</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="ijazah_tertinggi" required="">
+<option value="">Pilih...</option>
+<option>Tidak Punya Ijazah</option>
+<option>SD/Sederajat</option>
+<option>SMP/Sederajat</option>
+<option>SMA/Sederajat</option>
+<option>Diploma / Sarjana</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">6. Pekerjaan Utama</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:border-brand-500" name="pekerjaan_utama" placeholder="Contoh: Petani, Pedagang..." required="" type="text"/>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">7. Status Keberadaan</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="status_keberadaan" required="">
+<option value="">Pilih...</option><option>Tinggal Bersama Keluarga</option><option>Meninggal</option><option>Tidak Tinggal Bersama Keluarga/Pindah ke Wilayah Lain di Indonesia</option><option>Tidak Tinggal Bersama Keluarga/Pindah ke Luar Negeri</option><option>Tidak Ditemukan</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">8. Apakah bekerja selama seminggu yang lalu?</label>
+<div aria-required="true" class="flex gap-2 radio-group" data-name="bekerja_seminggu_lalu"><button class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="true" type="button">Ya</button><button class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">9. Lapangan Usaha di Pekerjaan Utama</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="lapangan_usaha_pekerjaan_utama" placeholder="Contoh: Perdagangan, Pertanian..." required="" type="text"/>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">10. Apakah memiliki usaha sendiri/bersama?</label>
+<div aria-required="true" class="flex gap-2 radio-group" data-name="memiliki_usaha_sendiri_bersama"><button class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="true" type="button">Ya</button><button class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div class="md:col-span-2">
+<label class="block font-medium text-slate-700 text-sm mb-2">11. Pendapatan Sebulan Terakhir</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="pendapatan_sebulan_terakhir" required="">
+<option value="">Pilih...</option><option>Tidak Ada Penghasilan</option><option>&lt; 1 Juta per Bulan</option><option>&gt;= 1 Juta per Bulan - &lt; UMK</option><option>UMK</option><option>&gt; UMK - 10 Juta per Bulan</option><option>&gt; 10 Juta per Bulan</option>
+</select>
+</div>
+</div>
+<div class="border-t border-slate-100 pt-5">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">12. Keluhan Kesehatan Kronis/Menahun</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="keluhan_kesehatan_kronis" required="">
+<option value="">Pilih...</option><option>Tidak Ada</option><option>Hipertensi (Darah Tinggi)</option><option>Rematik</option><option>Asma</option><option>Masalah Jantung</option><option>Diabetes (Kencing Manis)</option><option>Tuberculosis (TBC)</option><option>Stroke</option><option>Kanker atau Tumor Ganas</option><option>Gagal Ginjal</option><option>Haemophilia</option><option>HIV/AIDS</option><option>Kolestrol</option><option>Sirosis Hati</option><option>Thalasimia</option><option>Leukimia</option><option>Alzheimer</option><option>Lainnya</option>
+</select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">13. Status Disabilitas</label>
+<div aria-required="true" class="flex gap-2 radio-group" data-name="status_disabilitas"><button class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="true" type="button">Ya</button><button class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-2">14. Jenis Disabilitas</label>
+<select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none" name="jenis_disabilitas" required=""><option value="">Pilih...</option><option>Tidak</option><option>Disabilitas Fisik</option><option>Disabilitas Mental</option><option>Disabilitas Intelektual</option><option>Disabilitas Sensorik</option></select>
+</div>
+<div>
+<label class="block font-medium text-slate-700 text-sm mb-3">15. Status Kehamilan</label>
+<div aria-required="true" class="flex gap-2 radio-group" data-name="status_kehamilan"><button class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="true" type="button">Ya</button><button class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium" data-val="false" type="button">Tidak</button></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section></div>
+
+<!-- ========================================== -->
+<!-- BAGIAN 5: DOKUMEN & USULAN                 -->
+<!-- ========================================== -->
+<section class="space-y-6 hidden" id="sec-5">
+<div class="flex items-center gap-3 border-b-2 border-slate-200 pb-2">
+<span class="w-8 h-8 rounded-lg bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm">05</span>
+<h3 class="text-xl font-bold text-slate-800">Dokumen &amp; Usulan</h3>
+</div>
+<div class="bg-white rounded-2xl shadow-soft p-5 md:p-7 border border-slate-100 space-y-6">
+<h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider flex items-center gap-2"><i class="ph-fill ph-camera text-lg"></i> Dokumen Pendukung</h4>
+<div class="grid grid-cols-1 gap-5">
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Kartu Keluarga (jelas dan tidak terpotong)</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_kk" required="" type="file"/></div>
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Rumah (tampak depan)</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_rumah_depan" required="" type="file"/></div>
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Rumah tampak dalam</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_rumah_dalam" required="" type="file"/></div>
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Toilet/WC</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_toilet_wc" required="" type="file"/></div>
+</div>
+<div class="border-t border-slate-100 pt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Nomor Kontak</label><input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="nomor_kontak" placeholder="08xxxxxxxxxx" required="" type="tel"/></div>
+<div class="md:col-span-2"><label class="block font-medium text-slate-700 text-sm mb-2">Keterangan Tambahan (jika tidak ada, isi “Tidak ada”)</label><textarea class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none" name="keterangan_tambahan" required="" rows="3"></textarea></div>
+<div class="md:col-span-2"><label class="block font-medium text-slate-700 text-sm mb-3">Usulan Bansos <span class="text-red-500">*</span> <span class="text-xs font-normal text-slate-500">(pilih minimal satu)</span></label><div class="flex flex-wrap gap-4"><label class="inline-flex items-center gap-2 text-sm text-slate-700"><input class="rounded border-slate-300" data-required-group="usulan_bansos" name="usulan_bansos" type="checkbox" value="PKH"/> PKH</label><label class="inline-flex items-center gap-2 text-sm text-slate-700"><input class="rounded border-slate-300" data-required-group="usulan_bansos" name="usulan_bansos" type="checkbox" value="SEMBAKO"/> SEMBAKO</label><label class="inline-flex items-center gap-2 text-sm text-slate-700"><input class="rounded border-slate-300" data-required-group="usulan_bansos" name="usulan_bansos" type="checkbox" value="PBI"/> PBI</label><label class="inline-flex items-center gap-2 text-sm text-slate-700"><input class="rounded border-slate-300" data-required-group="usulan_bansos" name="usulan_bansos" type="checkbox" value="TIDAK ADA"/> TIDAK ADA</label></div></div>
+</div>
+<div class="rounded-xl bg-brand-50 border border-brand-100 p-4 text-xs text-brand-900 leading-relaxed"><strong>Koordinat rumah tidak dibuat ulang.</strong> Gunakan field “Titik Lokasi Koordinat (Geotagging)” pada tab Keluarga karena field tersebut sudah mewakili pertanyaan koordinat pada PDF.</div>
+</div>
+</section>
+
+</main>
+<footer class="hidden bg-white border-t border-slate-200 px-4 py-4 shrink-0 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.05)] relative z-40" id="form-footer">
+<div class="max-w-3xl mx-auto flex items-center justify-between gap-4">
+<p class="text-xs text-slate-500 hidden md:block w-1/2">Pastikan seluruh isian sudah diperiksa sebelum melakukan pengiriman.</p>
+<button class="w-full md:w-auto flex-1 bg-brand-600 text-white font-semibold py-3.5 px-6 rounded-xl hover:bg-brand-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-500/30" id="btn-open-summary">
+                Simpan &amp; Periksa Ringkasan <i class="ph-bold ph-arrow-right"></i>
+</button>
+</div>
+</footer>
+<!-- [TAMBAHAN]: Modal Ringkasan (Summary) -->
+<div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] hidden flex items-end md:items-center justify-center p-4 transition-opacity" id="summary-modal">
+<div class="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden transform transition-transform">
+<div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+<div>
+<h3 class="font-bold text-lg text-slate-900 leading-none">Ringkasan Data Survei</h3>
+<p class="text-xs text-slate-500 mt-1">Periksa kembali data sebelum dikirim permanen.</p>
+</div>
+<button class="text-slate-400 hover:text-slate-700 bg-white p-2 rounded-lg border border-slate-200" id="btn-close-modal"><i class="ph-bold ph-x"></i></button>
+</div>
+<div class="p-5 overflow-y-auto flex-1 space-y-5 text-sm" id="summary-content">
+<!-- Konten digenerate dari JS -->
+</div>
+<div class="p-4 border-t border-slate-100 bg-white flex gap-3">
+<button class="flex-1 py-3.5 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors" id="btn-edit-again">Edit Kembali</button>
+<button class="flex-1 py-3.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all flex justify-center items-center gap-2 shadow-lg shadow-emerald-600/30" id="btn-confirm-submit">
+                    Kirim Data Final <i class="ph-bold ph-paper-plane-right"></i>
+</button>
+</div>
+</div>
+</div>
+<script>
+        // --- Halaman Pembuka ---
+        document.getElementById('btn-start-form').addEventListener('click', () => {
+            document.getElementById('intro-page').classList.add('hidden');
+            document.getElementById('form-header').classList.remove('hidden');
+            document.getElementById('form-main').classList.remove('hidden');
+            document.getElementById('form-footer').classList.remove('hidden');
+            document.getElementById('form-main').scrollTo({ top: 0 });
+        });
+
+        // --- Shared Geolocation Data: GPS + input manual ---
+        let currentGeo = { lat: null, lon: null };
+        const latitudeInput = document.getElementById('manual-latitude');
+        const longitudeInput = document.getElementById('manual-longitude');
+        const geoStatus = document.getElementById('geo-status');
+
+        const syncManualCoordinates = () => {
+            const lat = latitudeInput.value.trim() === '' ? null : Number(latitudeInput.value);
+            const lon = longitudeInput.value.trim() === '' ? null : Number(longitudeInput.value);
+            currentGeo.lat = Number.isFinite(lat) ? lat : null;
+            currentGeo.lon = Number.isFinite(lon) ? lon : null;
+
+            const validLat = currentGeo.lat !== null && currentGeo.lat >= -90 && currentGeo.lat <= 90;
+            const validLon = currentGeo.lon !== null && currentGeo.lon >= -180 && currentGeo.lon <= 180;
+            if (validLat && validLon) {
+                geoStatus.textContent = 'Koordinat sudah terisi dan siap disimpan.';
+                geoStatus.className = 'text-xs text-green-600 font-medium';
+                document.getElementById('btn-geo').classList.remove('validation-invalid');
+            } else {
+                geoStatus.textContent = 'Isi koordinat manual atau gunakan tombol Ambil Koordinat GPS.';
+                geoStatus.className = 'text-xs text-slate-500';
+            }
+        };
+        latitudeInput.addEventListener('input', syncManualCoordinates);
+        longitudeInput.addEventListener('input', syncManualCoordinates);
+
+        document.getElementById('btn-geo').addEventListener('click', (e) => {
+            const btn = e.currentTarget;
+            btn.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> Membaca...';
+            navigator.geolocation.getCurrentPosition(pos => {
+                currentGeo.lat = pos.coords.latitude;
+                currentGeo.lon = pos.coords.longitude;
+                latitudeInput.value = currentGeo.lat;
+                longitudeInput.value = currentGeo.lon;
+                btn.innerHTML = '<i class="ph-bold ph-check text-green-600"></i> Koordinat Terisi';
+                btn.classList.add('bg-green-50', 'border-green-200');
+                btn.classList.remove('validation-invalid');
+                syncManualCoordinates();
+            }, () => {
+                btn.innerHTML = '<i class="ph-bold ph-warning"></i> GPS Gagal, Isi Manual';
+                geoStatus.textContent = 'GPS tidak dapat diakses. Silakan ketik Latitude dan Longitude secara manual.';
+                geoStatus.className = 'text-xs text-amber-600 font-medium';
+            });
+        });
+
+        // --- Navigation Tabs Logic ---
+        const tabs = document.querySelectorAll('.nav-tab');
+        const sections = document.querySelectorAll('main section');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => {
+                    t.classList.remove('bg-slate-900', 'text-white', 'shadow-md');
+                    t.classList.add('text-slate-500', 'bg-transparent', 'hover:bg-slate-100');
+                });
+                tab.classList.remove('text-slate-500', 'bg-transparent', 'hover:bg-slate-100');
+                tab.classList.add('bg-slate-900', 'text-white', 'shadow-md');
+
+                sections.forEach(sec => sec.classList.add('hidden'));
+                document.getElementById(tab.dataset.target).classList.remove('hidden');
+                document.querySelector('main').scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+
+        // --- Interaction Logic (Pills & Modals) ---
+        document.addEventListener('click', function(e) {
+            // Radio Pill logic
+            if (e.target.closest('.pill')) {
+                const btn = e.target.closest('.pill');
+                const group = btn.closest('.radio-group');
+                
+                if (group) {
+                    group.classList.remove('validation-invalid-group');
+                    const pills = group.querySelectorAll('.pill');
+                    pills.forEach(b => {
+                        b.classList.remove('active', 'bg-slate-900', 'text-white', 'border-slate-900', 'shadow-md');
+                        b.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+                    });
+                    
+                    btn.classList.add('active', 'bg-slate-900', 'text-white', 'border-slate-900', 'shadow-md');
+                    btn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+
+                    if (group.classList.contains('asset-toggle')) {
+                        const targetId = group.getAttribute('data-target');
+                        if(targetId) {
+                            const targetDiv = document.getElementById(targetId);
+                            if (targetDiv) {
+                                if (btn.getAttribute('data-val') === 'true') {
+                                    targetDiv.classList.remove('hidden');
+                                    targetDiv.classList.add('block');
+                                } else {
+                                    targetDiv.classList.add('hidden');
+                                    targetDiv.classList.remove('block');
+                                    if (targetDiv.matches && targetDiv.matches('input')) {
+                                        targetDiv.value = '';
+                                        targetDiv.classList.remove('validation-invalid');
+                                    } else {
+                                        const input = targetDiv.querySelector('input');
+                                        if(input) input.value = '';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Remove member card
+            if (e.target.closest('.btn-remove-member')) {
+                const btn = e.target.closest('.btn-remove-member');
+                const card = btn.closest('.member-card');
+                if (card) {
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.95)';
+                    setTimeout(() => { card.remove(); }, 300);
+                }
+            }
+        });
+
+        // --- Dynamic Members Addition ---
+        let memberCount = 1;
+        const btnAddMember = document.getElementById('btn-add-member');
+        const membersContainer = document.getElementById('members-container');
+
+        btnAddMember.addEventListener('click', () => {
+            memberCount++;
+            const newMemberId = `kesehatan-${memberCount}`;
+            
+            const memberHTML = `
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-soft overflow-hidden relative member-card transition-all duration-300 transform scale-95 opacity-0" data-urutan="${memberCount}">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-slate-400"></div>
+                    <div class="p-4 bg-slate-50 border-b border-slate-100 pl-6 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <i class="ph-duotone ph-user text-3xl text-slate-500"></i>
+                            <div><h4 class="font-bold text-slate-800">Anggota Keluarga #${memberCount}</h4></div>
+                        </div>
+                        <button type="button" class="btn-remove-member text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors">
+                            <i class="ph-bold ph-trash text-lg"></i>
+                        </button>
+                    </div>
+                    <div class="p-6 space-y-6 pl-7">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block font-medium text-slate-700 text-sm mb-2">1. Nama Lengkap</label>
+                                <input type="text" name="nama_lengkap" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="Nama anggota...">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-700 text-sm mb-2">2. Jenis Kelamin</label>
+                                <select name="jenis_kelamin" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none">
+                                    <option value="">Pilih...</option><option>Laki-Laki</option><option>Perempuan</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-700 text-sm mb-2">3. Status Hubungan</label>
+                                <select name="status_hubungan_kepala_keluarga" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none">
+                                    <option value="">Pilih...</option><option>Istri/Suami</option><option>Anak</option><option>Menantu</option><option>Cucu</option><option>Lainnya</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-700 text-sm mb-2">4. Status Partisipasi Sekolah</label>
+                                <select name="status_partisipasi_sekolah" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none">
+                                    <option value="">Pilih...</option><option>Tidak/Belum Pernah Sekolah</option><option>Masih Sekolah</option><option>Tidak Bersekolah Lagi</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-700 text-sm mb-2">5. Ijazah/STTB Tertinggi</label>
+                                <select name="ijazah_tertinggi" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none">
+                                    <option value="">Pilih...</option><option>Tidak Punya Ijazah</option><option>SD/Sederajat</option><option>SMP/Sederajat</option><option>SMA/Sederajat</option><option>Diploma / Sarjana</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-700 text-sm mb-2">6. Pekerjaan Utama</label>
+                                <input type="text" name="pekerjaan_utama" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="Ketik profesi...">
+                            </div>
+                                <div>
+                                    <label class="block font-medium text-slate-700 text-sm mb-2">7. Status Keberadaan</label>
+                                    <select name="status_keberadaan" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none">
+                                        <option value="">Pilih...</option><option>Tinggal Bersama Keluarga</option><option>Meninggal</option><option>Tidak Tinggal Bersama Keluarga/Pindah ke Wilayah Lain di Indonesia</option><option>Tidak Tinggal Bersama Keluarga/Pindah ke Luar Negeri</option><option>Tidak Ditemukan</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-slate-700 text-sm mb-3">8. Apakah bekerja selama seminggu yang lalu?</label>
+                                    <div class="flex gap-2 radio-group" data-name="bekerja_seminggu_lalu"><button type="button" data-val="true" class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium">Ya</button><button type="button" data-val="false" class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium">Tidak</button></div>
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-slate-700 text-sm mb-2">9. Lapangan Usaha di Pekerjaan Utama</label>
+                                    <input type="text" name="lapangan_usaha_pekerjaan_utama" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="Contoh: Perdagangan, Pertanian...">
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-slate-700 text-sm mb-3">10. Apakah memiliki usaha sendiri/bersama?</label>
+                                    <div class="flex gap-2 radio-group" data-name="memiliki_usaha_sendiri_bersama"><button type="button" data-val="true" class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium">Ya</button><button type="button" data-val="false" class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium">Tidak</button></div>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block font-medium text-slate-700 text-sm mb-2">11. Pendapatan Sebulan Terakhir</label>
+                                    <select name="pendapatan_sebulan_terakhir" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none">
+                                        <option value="">Pilih...</option><option>Tidak Ada Penghasilan</option><option>&lt; 1 Juta per Bulan</option><option>&gt;= 1 Juta per Bulan - &lt; UMK</option><option>UMK</option><option>&gt; UMK - 10 Juta per Bulan</option><option>&gt; 10 Juta per Bulan</option>
+                                    </select>
+                                </div>
+                        </div>
+                        <div class="border-t border-slate-100 pt-5">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block font-medium text-slate-700 text-sm mb-2">12. Keluhan Kesehatan Kronis/Menahun</label>
+                                    <select name="keluhan_kesehatan_kronis" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none">
+                                        <option value="">Pilih...</option><option>Tidak Ada</option><option>Hipertensi (Darah Tinggi)</option><option>Rematik</option><option>Asma</option><option>Masalah Jantung</option><option>Diabetes (Kencing Manis)</option><option>Tuberculosis (TBC)</option><option>Stroke</option><option>Kanker atau Tumor Ganas</option><option>Gagal Ginjal</option><option>Haemophilia</option><option>HIV/AIDS</option><option>Kolestrol</option><option>Sirosis Hati</option><option>Thalasimia</option><option>Leukimia</option><option>Alzheimer</option><option>Lainnya</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-slate-700 text-sm mb-3">13. Status Disabilitas</label>
+                                    <div class="flex gap-2 radio-group" data-name="status_disabilitas"><button type="button" data-val="true" class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium">Ya</button><button type="button" data-val="false" class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium">Tidak</button></div>
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-slate-700 text-sm mb-2">14. Jenis Disabilitas</label>
+                                    <select name="jenis_disabilitas" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none"><option value="">Pilih...</option><option>Tidak</option><option>Disabilitas Fisik</option><option>Disabilitas Mental</option><option>Disabilitas Intelektual</option><option>Disabilitas Sensorik</option></select>
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-slate-700 text-sm mb-3">15. Status Kehamilan</label>
+                                    <div class="flex gap-2 radio-group" data-name="status_kehamilan"><button type="button" data-val="true" class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium">Ya</button><button type="button" data-val="false" class="pill px-4 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 font-medium">Tidak</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            membersContainer.insertAdjacentHTML('beforeend', memberHTML);
+            const newCard = membersContainer.lastElementChild;
+            setTimeout(() => newCard.classList.remove('scale-95', 'opacity-0'), 10);
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+        // --- Data Extraction & Serialization ---
+        const extractValues = (container) => {
+            const data = {};
+            container.querySelectorAll('[name]').forEach(el => {
+                if (el.type === 'file') return;
+                if (el.type === 'checkbox') {
+                    if (!Array.isArray(data[el.name])) data[el.name] = [];
+                    if (el.checked) data[el.name].push(el.value);
+                    return;
+                }
+                data[el.name] = el.value || null;
+            });
+            container.querySelectorAll('.radio-group[data-name]').forEach(group => {
+                const active = group.querySelector('.active');
+                data[group.dataset.name] = active ? (active.dataset.val === 'true' ? true : active.dataset.val === 'false' ? false : active.dataset.val) : null;
+            });
+            return data;
+        };
+
+        const fileToPayload = (file) => new Promise((resolve, reject) => {
+            if (!file) return resolve(null);
+            const reader = new FileReader();
+            reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, data: reader.result });
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+        });
+
+        const extractValuesAsync = async (container) => {
+            const data = extractValues(container);
+            const fileInputs = Array.from(container.querySelectorAll('input[type="file"][name]'));
+            for (const input of fileInputs) data[input.name] = await fileToPayload(input.files[0] || null);
+            return data;
+        };
+
+        // --- Validasi Semua Data Wajib Diisi ---
+        const validationToast = document.getElementById('validation-toast');
+        const validationToastDetail = document.getElementById('validation-toast-detail');
+        let validationToastTimer = null;
+
+        const showValidationToast = (count) => {
+            validationToastDetail.textContent = count
+                ? `Masih ada ${count} bagian yang belum lengkap. Lengkapi semua pertanyaan sebelum melanjutkan.`
+                : 'Lengkapi semua pertanyaan sebelum melanjutkan.';
+            validationToast.classList.remove('hidden');
+            clearTimeout(validationToastTimer);
+            validationToastTimer = setTimeout(() => validationToast.classList.add('hidden'), 5000);
+        };
+
+        const clearValidationMarks = () => {
+            document.querySelectorAll('.validation-invalid').forEach(el => el.classList.remove('validation-invalid'));
+            document.querySelectorAll('.validation-invalid-group').forEach(el => el.classList.remove('validation-invalid-group'));
+        };
+
+        const markInvalid = (el, isGroup = false) => {
+            if (!el) return;
+            el.classList.add(isGroup ? 'validation-invalid-group' : 'validation-invalid');
+        };
+
+        const activateSectionForElement = (el) => {
+            const section = el?.closest('section');
+            if (!section) return;
+            sections.forEach(sec => sec.classList.add('hidden'));
+            section.classList.remove('hidden');
+            tabs.forEach(t => {
+                t.classList.remove('bg-slate-900', 'text-white', 'shadow-md');
+                t.classList.add('text-slate-500', 'bg-transparent', 'hover:bg-slate-100');
+            });
+            const tab = document.querySelector(`.nav-tab[data-target="${section.id}"]`);
+            if (tab) {
+                tab.classList.remove('text-slate-500', 'bg-transparent', 'hover:bg-slate-100');
+                tab.classList.add('bg-slate-900', 'text-white', 'shadow-md');
+            }
+        };
+
+        const validateAllData = () => {
+            clearValidationMarks();
+            const errors = [];
+            const addError = (el, group = false) => {
+                if (!el || errors.some(e => e.el === el)) return;
+                errors.push({ el, group });
+                markInvalid(el, group);
+            };
+
+            // Input/select/textarea biasa, termasuk seluruh anggota keluarga dinamis.
+            document.querySelectorAll('#dtsen-form input[name], #dtsen-form select[name], #dtsen-form textarea[name]').forEach(el => {
+                if (el.disabled) return;
+                const type = (el.type || '').toLowerCase();
+                if (type === 'checkbox' || el.name === 'jumlah') return; // ditangani khusus di bawah
+                if (type === 'file') {
+                    if (!el.files || !el.files.length) addError(el);
+                    return;
+                }
+                if ((el.value ?? '').toString().trim() === '') addError(el);
+            });
+
+            // Semua pilihan Ya/Tidak/pill wajib dipilih, termasuk tiap baris aset.
+            document.querySelectorAll('#dtsen-form .radio-group[data-name]').forEach(group => {
+                if (!group.querySelector('.pill.active')) addError(group, true);
+            });
+
+            // Jika aset dipilih Ya dan mempunyai kolom jumlah, jumlah wajib > 0.
+            document.querySelectorAll('#sec-3 .asset-toggle[data-target]').forEach(group => {
+                const active = group.querySelector('.pill.active');
+                if (!active || active.dataset.val !== 'true') return;
+                const qty = document.getElementById(group.dataset.target);
+                if (qty && (!qty.value || Number(qty.value) <= 0)) addError(qty);
+            });
+
+            // Koordinat wajib terisi, boleh dari GPS maupun input manual, dan harus dalam rentang valid.
+            syncManualCoordinates();
+            const validLatitude = currentGeo.lat !== null && currentGeo.lat >= -90 && currentGeo.lat <= 90;
+            const validLongitude = currentGeo.lon !== null && currentGeo.lon >= -180 && currentGeo.lon <= 180;
+            if (!validLatitude) addError(latitudeInput);
+            if (!validLongitude) addError(longitudeInput);
+
+            // Usulan bansos wajib memberikan jawaban minimal satu pilihan.
+            const bansos = Array.from(document.querySelectorAll('input[name="usulan_bansos"]'));
+            if (!bansos.some(cb => cb.checked)) {
+                const bansosWrap = bansos[0]?.closest('.flex.flex-wrap') || bansos[0]?.parentElement;
+                addError(bansosWrap, true);
+            }
+
+            if (errors.length) {
+                const first = errors[0].el;
+                activateSectionForElement(first);
+                showValidationToast(errors.length);
+                setTimeout(() => {
+                    first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    if (typeof first.focus === 'function' && !first.classList.contains('radio-group')) first.focus({ preventScroll: true });
+                }, 80);
+                return false;
+            }
+            return true;
+        };
+
+        // Hapus tanda merah ketika pengguna memperbaiki jawaban.
+        document.addEventListener('input', (e) => {
+            if (e.target.matches('input, select, textarea')) e.target.classList.remove('validation-invalid');
+        });
+        document.addEventListener('change', (e) => {
+            if (e.target.matches('input, select, textarea')) e.target.classList.remove('validation-invalid');
+            if (e.target.matches('input[name="usulan_bansos"]')) {
+                const all = Array.from(document.querySelectorAll('input[name="usulan_bansos"]'));
+                const none = all.find(cb => cb.value === 'TIDAK ADA');
+                if (e.target.value === 'TIDAK ADA' && e.target.checked) {
+                    all.filter(cb => cb !== e.target).forEach(cb => cb.checked = false);
+                } else if (e.target.checked && none) {
+                    none.checked = false;
+                }
+                const wrap = all[0]?.closest('.flex.flex-wrap');
+                if (all.some(cb => cb.checked)) wrap?.classList.remove('validation-invalid-group');
+            }
+        });
+
+        // --- Generate Summary Template ---
+        const generateSummaryHTML = (payload) => {
+            let html = '';
+            const formatKey = k => k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const formatVal = v => {
+                if (v === null || v === '') return '<span class="text-slate-300">-</span>';
+                if (v === true) return 'Ya';
+                if (v === false) return 'Tidak';
+                if (Array.isArray(v)) return v.length ? v.join(', ') : '<span class="text-slate-300">-</span>';
+                if (typeof v === 'object' && v.name) return v.name;
+                return v;
+            };
+
+            const renderTable = (obj) => {
+                let rows = '';
+                for(let key in obj) {
+                    if(key === 'latitude' || key === 'longitude' || key === 'urutan_anggota') continue;
+                    rows += `<div class="flex justify-between py-2 border-b border-slate-200/60 last:border-0"><span class="text-slate-500 w-1/2 pr-2">${formatKey(key)}</span><span class="font-semibold text-slate-800 text-right w-1/2 break-words">${formatVal(obj[key])}</span></div>`;
+                }
+                return rows;
+            };
+
+            // 1. Keluarga
+            html += `<div class="bg-white border border-slate-200 p-4 md:p-5 rounded-2xl mb-4 shadow-sm"><h4 class="font-bold text-brand-700 mb-3 uppercase tracking-wider text-xs border-b border-slate-100 pb-2">1. Identitas Keluarga</h4>${renderTable(payload.keluarga)}</div>`;
+
+            // 2. SosEk
+            html += `<div class="bg-white border border-slate-200 p-4 md:p-5 rounded-2xl mb-4 shadow-sm"><h4 class="font-bold text-brand-700 mb-3 uppercase tracking-wider text-xs border-b border-slate-100 pb-2">2. Sosial Ekonomi</h4>${renderTable(payload.sosial_ekonomi)}</div>`;
+
+            // 3. Aset
+            let asetRows = '';
+            payload.aset_keluarga.forEach(a => {
+                if (a.kepemilikan) {
+                    asetRows += `<div class="flex justify-between py-2 border-b border-slate-200/60 last:border-0"><span class="text-slate-500">${formatKey(a.jenis_aset)}</span><span class="font-semibold text-slate-800">Ya ${a.jumlah ? `(${a.jumlah} Unit)` : ''}</span></div>`;
+                }
+            });
+            if (!asetRows) asetRows = '<p class="text-slate-400 italic py-2">Tidak ada kepemilikan aset yang dicatat.</p>';
+            html += `<div class="bg-white border border-slate-200 p-4 md:p-5 rounded-2xl mb-4 shadow-sm"><h4 class="font-bold text-brand-700 mb-3 uppercase tracking-wider text-xs border-b border-slate-100 pb-2">3. Kepemilikan Aset</h4>${asetRows}</div>`;
+
+            // 4. Anggota
+            payload.anggota_keluarga.forEach((ang, idx) => {
+                html += `<div class="bg-white border border-slate-200 p-4 md:p-5 rounded-2xl mb-4 shadow-sm"><h4 class="font-bold text-brand-700 mb-3 uppercase tracking-wider text-xs border-b border-slate-100 pb-2">Anggota #${ang.urutan_anggota || (idx+1)} ${ang.nama_lengkap ? `- ${ang.nama_lengkap}` : ''}</h4>${renderTable(ang)}</div>`;
+            });
+
+            // 5. Dokumen & Usulan
+            html += `<div class="bg-white border border-slate-200 p-4 md:p-5 rounded-2xl mb-4 shadow-sm"><h4 class="font-bold text-brand-700 mb-3 uppercase tracking-wider text-xs border-b border-slate-100 pb-2">5. Dokumen & Usulan</h4>${renderTable(payload.dokumen || {})}</div>`;
+
+            return html;
+        };
+
+        let finalPayload = {};
+        const summaryModal = document.getElementById('summary-modal');
+        const btnOpenSummary = document.getElementById('btn-open-summary');
+        
+        // --- Open Summary ---
+        btnOpenSummary.addEventListener('click', async () => {
+            if (!validateAllData()) return;
+            finalPayload = {
+                keluarga: { ...extractValues(document.getElementById('sec-1')), latitude: currentGeo.lat, longitude: currentGeo.lon },
+                sosial_ekonomi: extractValues(document.getElementById('sec-2')),
+                aset_keluarga: Array.from(document.querySelectorAll('.asset-row')).map(row => ({
+                    jenis_aset: row.dataset.aset,
+                    ...extractValues(row)
+                })),
+                anggota_keluarga: Array.from(document.querySelectorAll('.member-card')).map(card => ({
+                    urutan_anggota: card.dataset.urutan,
+                    ...extractValues(card)
+                })),
+                dokumen: await extractValuesAsync(document.getElementById('sec-5'))
+            };
+            
+            document.getElementById('summary-content').innerHTML = generateSummaryHTML(finalPayload);
+            summaryModal.classList.remove('hidden');
+        });
+
+        // --- Close Summary ---
+        const closeModal = () => summaryModal.classList.add('hidden');
+        document.getElementById('btn-close-modal').addEventListener('click', closeModal);
+        document.getElementById('btn-edit-again').addEventListener('click', closeModal);
+
+        // --- Final Submit Action ---
+        const btnConfirm = document.getElementById('btn-confirm-submit');
+        btnConfirm.addEventListener('click', async () => {
+            if (!validateAllData()) {
+                closeModal();
+                return;
+            }
+            const originalHTML = btnConfirm.innerHTML;
+            btnConfirm.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> Memproses...';
+            btnConfirm.disabled = true;
+
+            try {
+                // Fetch logic (tetap menggunakan target URL bawaan)
+                const res = await fetch('https://script.google.com/macros/s/AKfycbwMly_eKkNBxA8B-P_RAjew3Nw_d-Nfat0FxEc4UWbCHoZcNyJg25rR0aNwAQ5qdm6G/exec', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' }, 
+                    body: JSON.stringify(finalPayload)
+                });
+                
+                let responseData;
+                try {
+                    responseData = await res.json();
+                } catch (parseError) {
+                    throw new Error('Respons server tidak valid. Pastikan deployment Google Apps Script sudah diperbarui.');
+                }
+
+                if (!res.ok || responseData.success === false) {
+                    throw new Error(responseData.error || `Server error (${res.status})`);
+                }
+
+                // Kompatibel dengan Apps Script lama maupun baru:
+                // sukses bila server mengirim id ATAU success:true.
+                if (!responseData.id && responseData.success !== true) {
+                    throw new Error(responseData.error || 'Server tidak mengembalikan status sukses.');
+                }
+
+                btnConfirm.innerHTML = '<i class="ph-bold ph-check-circle"></i> Selesai';
+                setTimeout(() => {
+                    alert("Data survei berhasil disimpan.");
+                    closeModal();
+                    btnConfirm.innerHTML = originalHTML;
+                    btnConfirm.disabled = false;
+                    document.querySelector('main').scrollTo({ top: 0, behavior: 'smooth' });
+                }, 1000);
+            } catch (err) {
+                alert("Gagal mengirim data: " + err.message);
+                btnConfirm.innerHTML = originalHTML;
+                btnConfirm.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
