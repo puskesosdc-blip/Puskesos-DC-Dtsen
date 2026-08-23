@@ -42,6 +42,47 @@
         .validation-invalid { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important; }
         .validation-invalid-group { outline: 2px solid #ef4444; outline-offset: 3px; border-radius: 0.75rem; }
     </style>
+<!-- Puskesos Responsive Fix -->
+
+<style>
+html { scroll-behavior: smooth; }
+body { overflow-x: hidden; }
+input, select, textarea, button {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.container, main, section {
+    width: 100%;
+}
+@media (max-width: 640px) {
+    body { font-size: 14px; }
+    .grid { grid-template-columns: 1fr !important; }
+    button[type="submit"], #submitBtn, .submit-btn {
+        width: 100% !important;
+        min-height: 52px;
+        font-size: 16px;
+        position: sticky;
+        bottom: 12px;
+        z-index: 20;
+    }
+    input, select, textarea {
+        font-size: 16px !important;
+        min-height: 44px;
+    }
+}
+@media (min-width: 641px) and (max-width: 1024px) {
+    .grid { gap: 16px; }
+}
+@media (min-width: 1025px) {
+    body { font-size: 16px; }
+}
+.upload-preview img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+</style>
+
 </head>
 <body class="text-slate-800 antialiased h-screen flex flex-col overflow-hidden selection:bg-brand-100 selection:text-brand-700 relative">
 <!-- Halaman pembuka sebelum masuk ke pertanyaan DTSEN -->
@@ -1322,5 +1363,42 @@
             }
         });
     </script>
+
+<script>
+(function(){
+document.addEventListener('DOMContentLoaded', function(){
+
+    const form = document.querySelector('form');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e){
+
+        const requiredImages = document.querySelectorAll('input[type="file"][required]');
+        let missing = false;
+
+        requiredImages.forEach(function(input){
+            if (!input.files || input.files.length === 0){
+                missing = true;
+            }
+        });
+
+        if (missing){
+            e.preventDefault();
+            alert('Semua foto wajib diupload sebelum data dikirim.');
+            return false;
+        }
+
+        const buttons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+        buttons.forEach(function(btn){
+            btn.disabled = true;
+            btn.innerText = 'Mengirim data...';
+        });
+
+    });
+
+});
+})();
+</script>
+
 </body>
 </html>
