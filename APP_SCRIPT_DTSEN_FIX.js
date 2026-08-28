@@ -64,22 +64,10 @@ function doGet() {
 function validateRequiredImages(dokumen) {
 
   const requiredImages = [
-    {
-      key: 'foto_kk',
-      label: 'Foto KK'
-    },
-    {
-      key: 'foto_rumah_depan',
-      label: 'Foto Rumah Depan'
-    },
-    {
-      key: 'foto_rumah_dalam',
-      label: 'Foto Rumah Dalam'
-    },
-    {
-      key: 'foto_toilet_wc',
-      label: 'Foto Toilet WC'
-    }
+    { key: 'foto_kk', label: 'Foto KK', geotagRequired: false },
+    { key: 'foto_rumah_depan', label: 'Foto Rumah Depan', geotagRequired: true },
+    { key: 'foto_rumah_dalam', label: 'Foto Rumah Dalam', geotagRequired: true },
+    { key: 'foto_toilet_wc', label: 'Foto Toilet WC', geotagRequired: true }
   ];
 
   requiredImages.forEach(item => {
@@ -93,6 +81,29 @@ function validateRequiredImages(dokumen) {
     ) {
       throw new Error(
         item.label + ' wajib diupload sebelum dikirim.'
+      );
+    }
+
+    // Foto KK boleh foto biasa. Hanya foto kondisi rumah yang wajib geotag.
+    if (!item.geotagRequired) return;
+
+    // Browser menerima GPS/EXIF maupun cap visual GPS Map Camera + Lat/Long.
+    // Server tetap memeriksa penanda dan rentang koordinat sebelum menyimpan file.
+    const geotag = image.geotag || {};
+    const latitude = Number(geotag.latitude);
+    const longitude = Number(geotag.longitude);
+    const sourceValid = geotag.source === 'EXIF_GPS' || geotag.source === 'VISUAL_GEOTAG';
+
+    if (
+      geotag.valid !== true ||
+      !sourceValid ||
+      !isFinite(latitude) ||
+      !isFinite(longitude) ||
+      latitude < -90 || latitude > 90 ||
+      longitude < -180 || longitude > 180
+    ) {
+      throw new Error(
+        item.label + ' ditolak. Foto kondisi rumah wajib menggunakan geotag (GPS/EXIF atau cap GPS Map Camera dengan Lat/Long).'
       );
     }
 

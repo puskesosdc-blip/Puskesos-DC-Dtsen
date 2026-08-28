@@ -8,6 +8,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
         tailwind.config = {
             theme: {
@@ -41,6 +42,10 @@
         .intro-scroll { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
         .validation-invalid { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important; }
         .validation-invalid-group { outline: 2px solid #ef4444; outline-offset: 3px; border-radius: 0.75rem; }
+        .photo-geotag-status { margin-top: 0.5rem; font-size: 0.75rem; line-height: 1.25rem; }
+        .photo-geotag-status[data-state="valid"] { color: #15803d; font-weight: 600; }
+        .photo-geotag-status[data-state="invalid"] { color: #dc2626; font-weight: 600; }
+        .photo-geotag-status[data-state="checking"] { color: #b45309; font-weight: 600; }
     </style>
 <!-- Puskesos Responsive Fix -->
 
@@ -792,11 +797,14 @@ input, select, textarea, button {
 </div>
 <div class="bg-white rounded-2xl shadow-soft p-5 md:p-7 border border-slate-100 space-y-6">
 <h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider flex items-center gap-2"><i class="ph-fill ph-camera text-lg"></i> Dokumen Pendukung</h4>
+<div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 leading-relaxed">
+<div class="flex items-start gap-2"><i class="ph-fill ph-map-pin text-lg mt-0.5 shrink-0"></i><div><strong>Geotag hanya wajib untuk foto kondisi rumah.</strong><br/>Foto KK boleh foto biasa. Foto rumah tampak depan, rumah tampak dalam, dan Toilet/WC wajib menggunakan aplikasi geotagging. Sistem menerima GPS dari metadata EXIF atau cap visual <em>GPS Map Camera</em> yang menampilkan Lat/Long seperti contoh foto lapangan.</div></div>
+</div>
 <div class="grid grid-cols-1 gap-5">
-<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Kartu Keluarga (jelas dan tidak terpotong)</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_kk" required="" type="file"/></div>
-<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Rumah (tampak depan)</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_rumah_depan" required="" type="file"/></div>
-<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Rumah tampak dalam</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_rumah_dalam" required="" type="file"/></div>
-<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Toilet/WC</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_toilet_wc" required="" type="file"/></div>
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Kartu Keluarga (jelas dan tidak terpotong)</label><input accept="image/*,.jpg,.jpeg,.png" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" data-geotag-required="false" name="foto_kk" required="" type="file"/><p class="mt-2 text-xs text-slate-500"><i class="ph-bold ph-image"></i> Foto KK boleh foto biasa — geotag tidak diwajibkan.</p></div>
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Rumah (tampak depan)</label><input accept="image/jpeg,.jpg,.jpeg" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" data-geotag-required="true" name="foto_rumah_depan" required="" type="file"/></div>
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Rumah tampak dalam</label><input accept="image/jpeg,.jpg,.jpeg" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" data-geotag-required="true" name="foto_rumah_dalam" required="" type="file"/></div>
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Toilet/WC</label><input accept="image/jpeg,.jpg,.jpeg" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" data-geotag-required="true" name="foto_toilet_wc" required="" type="file"/></div>
 </div>
 <div class="border-t border-slate-100 pt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
 <div><label class="block font-medium text-slate-700 text-sm mb-2">Nomor Kontak</label><input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="nomor_kontak" placeholder="08xxxxxxxxxx" required="" type="tel"/></div>
@@ -1098,10 +1106,342 @@ input, select, textarea, button {
             return data;
         };
 
-        const fileToPayload = (file) => new Promise((resolve, reject) => {
+        // --- Validasi Foto Dokumen & Geotag ---
+        // Foto KK boleh foto biasa. Foto kondisi rumah wajib lolos geotag SEBELUM dibuat menjadi payload.
+        // Geotag diterima dari GPS/EXIF atau cap visual GPS Map Camera yang memuat Lat/Long.
+        const photoGeotagState = new WeakMap();
+
+        const isGeotagRequired = (input) => input?.dataset?.geotagRequired === 'true';
+        const getPhotoLabel = (input) => input.closest('div')?.querySelector('label')?.textContent?.trim() || 'Foto';
+
+        const getPhotoStatusElement = (input) => {
+            let status = input.parentElement?.querySelector('.photo-geotag-status');
+            if (!status) {
+                status = document.createElement('div');
+                status.className = 'photo-geotag-status text-slate-500';
+                status.dataset.state = 'empty';
+                status.innerHTML = isGeotagRequired(input)
+                    ? '<i class="ph-bold ph-map-pin"></i> Wajib geotag: GPS/EXIF atau cap GPS Map Camera dengan Lat/Long.'
+                    : '<i class="ph-bold ph-image"></i> Foto biasa diperbolehkan; geotag tidak diwajibkan.';
+                input.insertAdjacentElement('afterend', status);
+            }
+            return status;
+        };
+
+        const setPhotoGeotagStatus = (input, state, message) => {
+            const status = getPhotoStatusElement(input);
+            status.dataset.state = state;
+            status.innerHTML = message;
+            input.dataset.geotagValid = state === 'valid' ? 'true' : 'false';
+            if (state === 'invalid') input.classList.add('validation-invalid');
+            if (state === 'valid') input.classList.remove('validation-invalid');
+        };
+
+        const readExifGps = async (file) => {
+            if (!file) return { valid: false, reason: 'File foto tidak ditemukan.' };
+
+            const isJpeg = /image\/jpe?g/i.test(file.type || '') || /\.jpe?g$/i.test(file.name || '');
+            if (!isJpeg) {
+                return { valid: false, reason: 'GPS/EXIF hanya dapat dibaca dari JPEG/JPG.' };
+            }
+
+            let buffer;
+            try {
+                buffer = await file.arrayBuffer();
+            } catch (error) {
+                return { valid: false, reason: 'Foto tidak dapat dibaca untuk memeriksa geotag.' };
+            }
+
+            const view = new DataView(buffer);
+            const length = view.byteLength;
+            const safeU16 = (offset, little = false) => {
+                if (offset < 0 || offset + 2 > length) throw new Error('EXIF di luar batas file.');
+                return view.getUint16(offset, little);
+            };
+            const safeU32 = (offset, little = false) => {
+                if (offset < 0 || offset + 4 > length) throw new Error('EXIF di luar batas file.');
+                return view.getUint32(offset, little);
+            };
+
+            try {
+                if (length < 4 || safeU16(0, false) !== 0xFFD8) {
+                    return { valid: false, reason: 'File bukan JPEG yang valid.' };
+                }
+
+                let markerOffset = 2;
+                while (markerOffset + 4 <= length) {
+                    if (view.getUint8(markerOffset) !== 0xFF) {
+                        markerOffset += 1;
+                        continue;
+                    }
+
+                    const marker = view.getUint8(markerOffset + 1);
+                    markerOffset += 2;
+                    if (marker === 0xD8 || marker === 0xD9 || (marker >= 0xD0 && marker <= 0xD7) || marker === 0x01) continue;
+                    if (markerOffset + 2 > length) break;
+
+                    const segmentLength = safeU16(markerOffset, false);
+                    if (segmentLength < 2 || markerOffset + segmentLength > length) break;
+                    const segmentStart = markerOffset + 2;
+
+                    if (marker === 0xE1 && segmentLength >= 8) {
+                        const exifHeader = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
+                        const isExif = exifHeader.every((b, i) => view.getUint8(segmentStart + i) === b);
+                        if (isExif) {
+                            const tiffStart = segmentStart + 6;
+                            if (tiffStart + 8 > length) break;
+
+                            const byteOrder = safeU16(tiffStart, false);
+                            const little = byteOrder === 0x4949;
+                            if (!little && byteOrder !== 0x4D4D) return { valid: false, reason: 'Metadata EXIF rusak atau tidak dikenali.' };
+                            if (safeU16(tiffStart + 2, little) !== 42) return { valid: false, reason: 'Metadata EXIF tidak valid.' };
+
+                            const typeSize = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1, 9: 4, 10: 8 };
+                            const absoluteValueOffset = (entryOffset, type, count) => {
+                                const bytes = (typeSize[type] || 1) * count;
+                                if (bytes <= 4) return entryOffset + 8;
+                                return tiffStart + safeU32(entryOffset + 8, little);
+                            };
+                            const readAscii = (entryOffset, type, count) => {
+                                const begin = absoluteValueOffset(entryOffset, type, count);
+                                let out = '';
+                                for (let i = 0; i < count && begin + i < length; i++) {
+                                    const code = view.getUint8(begin + i);
+                                    if (!code) break;
+                                    out += String.fromCharCode(code);
+                                }
+                                return out.trim().toUpperCase();
+                            };
+                            const readRationals = (entryOffset, type, count) => {
+                                if (type !== 5) return [];
+                                const begin = absoluteValueOffset(entryOffset, type, count);
+                                const values = [];
+                                for (let i = 0; i < count; i++) {
+                                    const off = begin + i * 8;
+                                    const numerator = safeU32(off, little);
+                                    const denominator = safeU32(off + 4, little);
+                                    values.push(denominator ? numerator / denominator : 0);
+                                }
+                                return values;
+                            };
+
+                            const ifd0 = tiffStart + safeU32(tiffStart + 4, little);
+                            const ifd0Count = safeU16(ifd0, little);
+                            let gpsIfdPointer = null;
+                            for (let i = 0; i < ifd0Count; i++) {
+                                const entry = ifd0 + 2 + i * 12;
+                                if (entry + 12 > length) break;
+                                if (safeU16(entry, little) === 0x8825) {
+                                    gpsIfdPointer = safeU32(entry + 8, little);
+                                    break;
+                                }
+                            }
+                            if (gpsIfdPointer === null) return { valid: false, reason: 'Koordinat GPS tidak ditemukan pada metadata EXIF foto.' };
+
+                            const gpsIfd = tiffStart + gpsIfdPointer;
+                            const gpsCount = safeU16(gpsIfd, little);
+                            let latRef = '', lonRef = '';
+                            let latParts = null, lonParts = null;
+                            for (let i = 0; i < gpsCount; i++) {
+                                const entry = gpsIfd + 2 + i * 12;
+                                if (entry + 12 > length) break;
+                                const tag = safeU16(entry, little);
+                                const type = safeU16(entry + 2, little);
+                                const count = safeU32(entry + 4, little);
+                                if (tag === 0x0001) latRef = readAscii(entry, type, count);
+                                if (tag === 0x0002) latParts = readRationals(entry, type, count);
+                                if (tag === 0x0003) lonRef = readAscii(entry, type, count);
+                                if (tag === 0x0004) lonParts = readRationals(entry, type, count);
+                            }
+                            if (!latParts || latParts.length < 3 || !lonParts || lonParts.length < 3 || !latRef || !lonRef) {
+                                return { valid: false, reason: 'Metadata GPS foto tidak lengkap.' };
+                            }
+
+                            let latitude = latParts[0] + latParts[1] / 60 + latParts[2] / 3600;
+                            let longitude = lonParts[0] + lonParts[1] / 60 + lonParts[2] / 3600;
+                            if (latRef === 'S') latitude *= -1;
+                            if (lonRef === 'W') longitude *= -1;
+                            const validLat = Number.isFinite(latitude) && latitude >= -90 && latitude <= 90;
+                            const validLon = Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+                            if (!validLat || !validLon) return { valid: false, reason: 'Koordinat GPS pada foto tidak valid.' };
+
+                            return { valid: true, latitude, longitude, source: 'EXIF_GPS' };
+                        }
+                    }
+                    markerOffset += segmentLength;
+                }
+                return { valid: false, reason: 'Metadata EXIF geotag tidak ditemukan pada foto.' };
+            } catch (error) {
+                return { valid: false, reason: 'Metadata geotag foto tidak dapat diverifikasi.' };
+            }
+        };
+
+        const loadImageForOcr = async (file) => {
+            if (typeof createImageBitmap === 'function') {
+                try { return await createImageBitmap(file); } catch (_) {}
+            }
+            return await new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Gambar tidak dapat dibuka.')); };
+                img.src = url;
+            });
+        };
+
+        const readVisualGeotag = async (file) => {
+            if (!window.Tesseract || typeof window.Tesseract.recognize !== 'function') {
+                return { valid: false, reason: 'Pemeriksa cap GPS Map Camera belum berhasil dimuat. Periksa koneksi internet lalu coba lagi.' };
+            }
+
+            let source;
+            try {
+                source = await loadImageForOcr(file);
+                const width = source.width || source.naturalWidth;
+                const height = source.height || source.naturalHeight;
+                if (!width || !height) throw new Error('Ukuran gambar tidak valid.');
+
+                // Cap GPS Map Camera umumnya berada di bagian bawah foto. OCR hanya area ini agar lebih cepat di HP.
+                const cropY = Math.floor(height * 0.52);
+                const cropH = Math.max(1, height - cropY);
+                const targetW = Math.min(1200, width);
+                const scale = targetW / width;
+                const targetH = Math.max(1, Math.round(cropH * scale));
+                const canvas = document.createElement('canvas');
+                canvas.width = targetW;
+                canvas.height = targetH;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                ctx.drawImage(source, 0, cropY, width, cropH, 0, 0, targetW, targetH);
+
+                const result = await window.Tesseract.recognize(canvas, 'eng', { logger: () => {} });
+                const rawText = result?.data?.text || '';
+                const text = rawText.replace(/,/g, '.').replace(/[–—−]/g, '-').replace(/\s+/g, ' ').trim();
+                const upper = text.toUpperCase();
+
+                // Harus terlihat sebagai cap aplikasi geotag, bukan sekadar angka koordinat acak.
+                const hasGpsMapStamp = /MAP\s*CAMERA/.test(upper) || /GPS\s*CAMERA/.test(upper);
+                let latMatch = text.match(/\bLat(?:itude)?\s*[:=]?\s*([+-]?\d{1,2}(?:\.\d{3,}))\b/i);
+                let lonMatch = text.match(/\b(?:Long|Lon|Longitude)\s*[:=]?\s*([+-]?\d{1,3}(?:\.\d{3,}))\b/i);
+
+                // Fallback untuk OCR yang menghilangkan label Long tetapi masih membaca satu baris "Lat ... Long ..." secara tidak sempurna.
+                if (!latMatch || !lonMatch) {
+                    const pair = text.match(/\bLat\s*[:=]?\s*([+-]?\d{1,2}(?:\.\d{3,})).{0,30}?\bL(?:ong|on|0ng)\s*[:=]?\s*([+-]?\d{1,3}(?:\.\d{3,}))/i);
+                    if (pair) {
+                        latMatch = [pair[0], pair[1]];
+                        lonMatch = [pair[0], pair[2]];
+                    }
+                }
+
+                if (!hasGpsMapStamp || !latMatch || !lonMatch) {
+                    return { valid: false, reason: 'Cap GPS Map Camera beserta tulisan Lat/Long tidak terbaca pada foto.' };
+                }
+
+                const latitude = Number(latMatch[1]);
+                const longitude = Number(lonMatch[1]);
+                if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+                    return { valid: false, reason: 'Koordinat pada cap geotag tidak valid.' };
+                }
+
+                return {
+                    valid: true,
+                    latitude,
+                    longitude,
+                    source: 'VISUAL_GEOTAG',
+                    proof: 'GPS_MAP_CAMERA_STAMP'
+                };
+            } catch (error) {
+                return { valid: false, reason: 'Tulisan geotag pada foto tidak dapat diperiksa.' };
+            } finally {
+                if (source && typeof source.close === 'function') source.close();
+            }
+        };
+
+        const requiredPhotoInputs = Array.from(document.querySelectorAll('#sec-5 input[type="file"][required]'));
+        requiredPhotoInputs.forEach(input => {
+            getPhotoStatusElement(input);
+            input.addEventListener('change', async () => {
+                photoGeotagState.delete(input);
+                input.dataset.geotagValid = 'false';
+                const file = input.files?.[0] || null;
+
+                if (!file) {
+                    setPhotoGeotagStatus(input, 'empty', isGeotagRequired(input)
+                        ? '<i class="ph-bold ph-map-pin"></i> Wajib geotag: GPS/EXIF atau cap GPS Map Camera dengan Lat/Long.'
+                        : '<i class="ph-bold ph-image"></i> Foto biasa diperbolehkan; geotag tidak diwajibkan.');
+                    return;
+                }
+
+                // KK tidak perlu geotag sama sekali.
+                if (!isGeotagRequired(input)) {
+                    const isImage = /^image\//i.test(file.type || '') || /\.(jpe?g|png|webp)$/i.test(file.name || '');
+                    if (!isImage) {
+                        input.value = '';
+                        setPhotoGeotagStatus(input, 'invalid', '<i class="ph-bold ph-x-circle"></i> Foto KK ditolak: file harus berupa gambar.');
+                        showValidationToast(0, 'Foto KK harus berupa file gambar.');
+                        return;
+                    }
+                    input.dataset.geotagValid = 'not-required';
+                    setPhotoGeotagStatus(input, 'valid', '<i class="ph-bold ph-check-circle"></i> Foto KK siap ✓ &nbsp; Geotag tidak diwajibkan.');
+                    return;
+                }
+
+                setPhotoGeotagStatus(input, 'checking', '<i class="ph-bold ph-spinner animate-spin"></i> Memeriksa GPS/EXIF pada foto...');
+                let geo = await readExifGps(file);
+                if ((input.files?.[0] || null) !== file) return;
+
+                // GPS Map Camera tertentu menaruh lokasi sebagai cap/tulisan di foto, tetapi tidak menyimpan EXIF.
+                if (!geo.valid) {
+                    setPhotoGeotagStatus(input, 'checking', '<i class="ph-bold ph-spinner animate-spin"></i> EXIF tidak ada. Memeriksa cap GPS Map Camera dan Lat/Long pada foto...');
+                    geo = await readVisualGeotag(file);
+                }
+                if ((input.files?.[0] || null) !== file) return;
+
+                if (!geo.valid) {
+                    photoGeotagState.delete(input);
+                    input.value = '';
+                    setPhotoGeotagStatus(
+                        input,
+                        'invalid',
+                        `<i class="ph-bold ph-x-circle"></i> Foto ditolak: ${geo.reason} Gunakan foto asli dari aplikasi GPS Map Camera dengan cap lokasi dan Lat/Long terlihat jelas.`
+                    );
+                    showValidationToast(0, 'Foto kondisi rumah wajib memakai geotag. File yang tidak lolos tidak dikirim.');
+                    return;
+                }
+
+                photoGeotagState.set(input, geo);
+                const sourceLabel = geo.source === 'EXIF_GPS' ? 'GPS/EXIF' : 'Cap GPS Map Camera';
+                setPhotoGeotagStatus(
+                    input,
+                    'valid',
+                    `<i class="ph-bold ph-check-circle"></i> Geotag terdeteksi ✓ &nbsp; ${sourceLabel} · ${geo.latitude.toFixed(6)}, ${geo.longitude.toFixed(6)}`
+                );
+            });
+        });
+
+        const fileToPayload = (file, geotag, requireGeotag = false) => new Promise((resolve, reject) => {
             if (!file) return resolve(null);
+            if (requireGeotag && (!geotag || geotag.valid !== true)) return reject(new Error('Foto kondisi rumah tanpa geotag tidak boleh dikirim.'));
             const reader = new FileReader();
-            reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, data: reader.result });
+            reader.onload = () => {
+                const payload = {
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: reader.result
+                };
+                if (requireGeotag) {
+                    payload.geotag = {
+                        valid: true,
+                        latitude: geotag.latitude,
+                        longitude: geotag.longitude,
+                        source: geotag.source,
+                        proof: geotag.proof || null
+                    };
+                } else {
+                    payload.geotag = { required: false, source: 'NOT_REQUIRED' };
+                }
+                resolve(payload);
+            };
             reader.onerror = () => reject(reader.error);
             reader.readAsDataURL(file);
         });
@@ -1109,7 +1449,15 @@ input, select, textarea, button {
         const extractValuesAsync = async (container) => {
             const data = extractValues(container);
             const fileInputs = Array.from(container.querySelectorAll('input[type="file"][name]'));
-            for (const input of fileInputs) data[input.name] = await fileToPayload(input.files[0] || null);
+            for (const input of fileInputs) {
+                const file = input.files[0] || null;
+                const requireGeotag = isGeotagRequired(input);
+                const geotag = photoGeotagState.get(input);
+                if (file && requireGeotag && (!geotag || geotag.valid !== true)) {
+                    throw new Error(`${getPhotoLabel(input)} belum memiliki geotag yang valid.`);
+                }
+                data[input.name] = await fileToPayload(file, geotag, requireGeotag);
+            }
             return data;
         };
 
@@ -1118,10 +1466,10 @@ input, select, textarea, button {
         const validationToastDetail = document.getElementById('validation-toast-detail');
         let validationToastTimer = null;
 
-        const showValidationToast = (count) => {
-            validationToastDetail.textContent = count
+        const showValidationToast = (count, customMessage = '') => {
+            validationToastDetail.textContent = customMessage || (count
                 ? `Masih ada ${count} bagian yang belum lengkap. Lengkapi semua pertanyaan sebelum melanjutkan.`
-                : 'Lengkapi semua pertanyaan sebelum melanjutkan.';
+                : 'Lengkapi semua pertanyaan sebelum melanjutkan.');
             validationToast.classList.remove('hidden');
             clearTimeout(validationToastTimer);
             validationToastTimer = setTimeout(() => validationToast.classList.add('hidden'), 5000);
@@ -1168,7 +1516,11 @@ input, select, textarea, button {
                 const type = (el.type || '').toLowerCase();
                 if (type === 'checkbox' || el.name === 'jumlah') return; // ditangani khusus di bawah
                 if (type === 'file') {
-                    if (!el.files || !el.files.length) addError(el);
+                    if (!el.files || !el.files.length) {
+                        addError(el);
+                    } else if (isGeotagRequired(el) && (el.dataset.geotagValid !== 'true' || !photoGeotagState.get(el)?.valid)) {
+                        addError(el);
+                    }
                     return;
                 }
                 if ((el.value ?? '').toString().trim() === '') addError(el);
@@ -1219,7 +1571,7 @@ input, select, textarea, button {
             if (e.target.matches('input, select, textarea')) e.target.classList.remove('validation-invalid');
         });
         document.addEventListener('change', (e) => {
-            if (e.target.matches('input, select, textarea')) e.target.classList.remove('validation-invalid');
+            if (e.target.matches('input, select, textarea') && e.target.type !== 'file') e.target.classList.remove('validation-invalid');
             if (e.target.matches('input[name="usulan_bansos"]')) {
                 const all = Array.from(document.querySelectorAll('input[name="usulan_bansos"]'));
                 const none = all.find(cb => cb.value === 'TIDAK ADA');
@@ -1242,7 +1594,16 @@ input, select, textarea, button {
                 if (v === true) return 'Ya';
                 if (v === false) return 'Tidak';
                 if (Array.isArray(v)) return v.length ? v.join(', ') : '<span class="text-slate-300">-</span>';
-                if (typeof v === 'object' && v.name) return v.name;
+                if (typeof v === 'object' && v.name) {
+                    if (v.geotag?.valid) {
+                        const geoLabel = v.geotag.source === 'VISUAL_GEOTAG' ? 'Cap GPS Map Camera' : 'GPS/EXIF';
+                        return `${v.name}<br><span class="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-green-700"><i class="ph-bold ph-map-pin"></i> Geotag ✓ ${geoLabel} · ${Number(v.geotag.latitude).toFixed(6)}, ${Number(v.geotag.longitude).toFixed(6)}</span>`;
+                    }
+                    if (v.geotag?.required === false) {
+                        return `${v.name}<br><span class="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-slate-500"><i class="ph-bold ph-image"></i> Geotag tidak diwajibkan</span>`;
+                    }
+                    return v.name;
+                }
                 return v;
             };
 
@@ -1289,22 +1650,26 @@ input, select, textarea, button {
         // --- Open Summary ---
         btnOpenSummary.addEventListener('click', async () => {
             if (!validateAllData()) return;
-            finalPayload = {
-                keluarga: { ...extractValues(document.getElementById('sec-1')), latitude: currentGeo.lat, longitude: currentGeo.lon },
-                sosial_ekonomi: extractValues(document.getElementById('sec-2')),
-                aset_keluarga: Array.from(document.querySelectorAll('.asset-row')).map(row => ({
-                    jenis_aset: row.dataset.aset,
-                    ...extractValues(row)
-                })),
-                anggota_keluarga: Array.from(document.querySelectorAll('.member-card')).map(card => ({
-                    urutan_anggota: card.dataset.urutan,
-                    ...extractValues(card)
-                })),
-                dokumen: await extractValuesAsync(document.getElementById('sec-5'))
-            };
-            
-            document.getElementById('summary-content').innerHTML = generateSummaryHTML(finalPayload);
-            summaryModal.classList.remove('hidden');
+            try {
+                finalPayload = {
+                    keluarga: { ...extractValues(document.getElementById('sec-1')), latitude: currentGeo.lat, longitude: currentGeo.lon },
+                    sosial_ekonomi: extractValues(document.getElementById('sec-2')),
+                    aset_keluarga: Array.from(document.querySelectorAll('.asset-row')).map(row => ({
+                        jenis_aset: row.dataset.aset,
+                        ...extractValues(row)
+                    })),
+                    anggota_keluarga: Array.from(document.querySelectorAll('.member-card')).map(card => ({
+                        urutan_anggota: card.dataset.urutan,
+                        ...extractValues(card)
+                    })),
+                    dokumen: await extractValuesAsync(document.getElementById('sec-5'))
+                };
+                
+                document.getElementById('summary-content').innerHTML = generateSummaryHTML(finalPayload);
+                summaryModal.classList.remove('hidden');
+            } catch (error) {
+                showValidationToast(0, error.message || 'Foto geotag belum valid.');
+            }
         });
 
         // --- Close Summary ---
@@ -1324,6 +1689,10 @@ input, select, textarea, button {
             btnConfirm.disabled = true;
 
             try {
+                // Bangun ulang bagian dokumen tepat sebelum kirim agar foto yang berubah setelah ringkasan
+                // tidak dapat lolos tanpa pemeriksaan geotag.
+                finalPayload.dokumen = await extractValuesAsync(document.getElementById('sec-5'));
+
                 // Fetch logic (tetap menggunakan target URL bawaan)
                 const res = await fetch('https://script.google.com/macros/s/AKfycbwMly_eKkNBxA8B-P_RAjew3Nw_d-Nfat0FxEc4UWbCHoZcNyJg25rR0aNwAQ5qdm6G/exec', {
                     method: 'POST',

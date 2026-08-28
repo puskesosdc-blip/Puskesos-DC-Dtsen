@@ -85,12 +85,56 @@ if (!sosialEkColumns.includes('besar_daya_listrik_va')) {
     db.exec('ALTER TABLE sosial_ekonomi ADD COLUMN besar_daya_listrik_va INTEGER');
 }
 
+// --- VALIDASI FOTO DOKUMEN & GEOTAG ---
+const REQUIRED_PHOTOS = [
+    ['foto_kk', 'Foto KK'],
+    ['foto_rumah_depan', 'Foto Rumah Depan'],
+    ['foto_rumah_dalam', 'Foto Rumah Dalam'],
+    ['foto_toilet_wc', 'Foto Toilet/WC']
+];
+
+const GEOTAG_REQUIRED_PHOTOS = new Set([
+    'foto_rumah_depan',
+    'foto_rumah_dalam',
+    'foto_toilet_wc'
+]);
+
+function validateGeotaggedPhotos(dokumen = {}) {
+    for (const [key, label] of REQUIRED_PHOTOS) {
+        const image = dokumen[key];
+        if (!image || !image.data || String(image.data).length < 50) {
+            throw new Error(`${label} wajib diupload sebelum dikirim.`);
+        }
+
+        // Foto KK cukup file gambar biasa; hanya foto kondisi rumah yang wajib geotag.
+        if (!GEOTAG_REQUIRED_PHOTOS.has(key)) continue;
+
+        const geo = image.geotag || {};
+        const lat = Number(geo.latitude);
+        const lon = Number(geo.longitude);
+        const allowedSource = geo.source === 'EXIF_GPS' || geo.source === 'VISUAL_GEOTAG';
+        const valid = geo.valid === true && allowedSource &&
+            Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+            Number.isFinite(lon) && lon >= -180 && lon <= 180;
+
+        if (!valid) {
+            throw new Error(`${label} ditolak. Foto kondisi rumah wajib menggunakan geotag (GPS/EXIF atau cap GPS Map Camera dengan Lat/Long).`);
+        }
+    }
+}
+
 // --- ENDPOINTS ---
 app.post('/api/dtsen', (req, res) => {
     const { keluarga, sosial_ekonomi, aset_keluarga, anggota_keluarga, dokumen } = req.body;
     
     if (!keluarga.nik_kepala_keluarga || keluarga.nik_kepala_keluarga.length < 16) return res.status(400).json({ error: 'NIK min 16 digit' });
     if (!keluarga.no_kk || keluarga.no_kk.length < 16) return res.status(400).json({ error: 'No KK min 16 digit' });
+
+    try {
+        validateGeotaggedPhotos(dokumen);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
 
     const insertKeluarga = db.prepare(`INSERT INTO keluarga (nama_kepala_keluarga, nik_kepala_keluarga, no_kk, jumlah_anggota_keluarga, provinsi, kabupaten_kota, kecamatan, desa_kelurahan, kode_pos, rt_rw_dusun, alamat_lengkap, nama_jalan, nomor_rumah, sesuai_kk, latitude, longitude) VALUES (@nama_kepala_keluarga, @nik_kepala_keluarga, @no_kk, @jumlah_anggota_keluarga, @provinsi, @kabupaten_kota, @kecamatan, @desa_kelurahan, @kode_pos, @rt_rw_dusun, @alamat_lengkap, @nama_jalan, @nomor_rumah, @sesuai_kk, @latitude, @longitude)`);
     const insertSosEk = db.prepare(`INSERT INTO sosial_ekonomi (keluarga_id, jenis_bangunan, status_kepemilikan_bangunan, ada_keluarga_lain, jumlah_orang_tinggal, bukti_kepemilikan, luas_lantai_m2, fasilitas_bab, pembuangan_akhir_tinja, sumber_air_minum, sumber_penerangan, pengeluaran_listrik, pengeluaran_pulsa, pengeluaran_makanan_mingguan, total_pendapatan_bulanan, memiliki_tempat_berteduh_tetap, kepala_pengurus_masih_bekerja, khawatir_tidak_makan_setahun, pengeluaran_pangan_lebih_70, ada_pengeluaran_pakaian_setahun, pengeluaran_internet_bulanan, nomor_langganan_listrik, nomor_meter_listrik, besar_daya_listrik_va) VALUES (@keluarga_id, @jenis_bangunan, @status_kepemilikan_bangunan, @ada_keluarga_lain, @jumlah_orang_tinggal, @bukti_kepemilikan, @luas_lantai_m2, @fasilitas_bab, @pembuangan_akhir_tinja, @sumber_air_minum, @sumber_penerangan, @pengeluaran_listrik, @pengeluaran_pulsa, @pengeluaran_makanan_mingguan, @total_pendapatan_bulanan, @memiliki_tempat_berteduh_tetap, @kepala_pengurus_masih_bekerja, @khawatir_tidak_makan_setahun, @pengeluaran_pangan_lebih_70, @ada_pengeluaran_pakaian_setahun, @pengeluaran_internet_bulanan, @nomor_langganan_listrik, @nomor_meter_listrik, @besar_daya_listrik_va)`);

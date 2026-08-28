@@ -1,9 +1,27 @@
-FIX PACKAGE
+PERUBAHAN VALIDASI FOTO GEOTAG
 
-Frontend sudah menggunakan Content-Type text/plain untuk Google Apps Script agar tidak terkena CORS preflight.
+1. FOTO KK TIDAK WAJIB GEOTAG.
+   - Foto KK boleh foto biasa.
+   - Cukup harus berupa file gambar dan wajib diupload.
 
-Jika masih Failed to fetch:
-1. Deploy ulang Apps Script sebagai Web App.
-2. Pastikan Execute as: Me.
-3. Pastikan Who has access: Anyone.
-4. Update URL /exec pada index.html jika deployment ID berubah.
+2. FOTO KONDISI RUMAH WAJIB GEOTAG:
+   - Foto Rumah Tampak Depan
+   - Foto Rumah Tampak Dalam
+   - Foto Toilet/WC
+
+3. Sistem menerima dua bentuk geotag:
+   A. Koordinat GPS pada metadata EXIF JPEG.
+   B. Cap visual GPS Map Camera pada foto yang menampilkan tulisan Lat dan Long.
+      Ini menangani aplikasi geotag yang menempelkan lokasi pada gambar tetapi tidak menyimpan GPS di EXIF.
+
+4. Untuk cap visual GPS Map Camera, browser memakai OCR Tesseract.js pada bagian bawah foto.
+   Foto tanpa geotag yang terbaca langsung ditolak, input dikosongkan, dan file tidak dibuat menjadi payload.
+
+5. server.js dan APP_SCRIPT_DTSEN_FIX.js ikut diubah:
+   - KK hanya diperiksa keberadaan file.
+   - 3 foto kondisi rumah harus membawa hasil validasi geotag dengan source EXIF_GPS atau VISUAL_GEOTAG.
+
+6. Setelah mengganti APP_SCRIPT_DTSEN_FIX.js di Google Apps Script, deploy ulang Web App agar validasi server terbaru aktif.
+
+CATATAN KONEKSI:
+Pemeriksaan cap visual membutuhkan internet saat halaman dibuka untuk memuat Tesseract.js dari CDN. Jika GPS/EXIF tersedia, foto dapat lolos tanpa OCR.
