@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Formulir DTSEN Lengkap</title>
+<title>Formulir DTSEN Lengkap - v4</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -79,7 +79,11 @@ input, select, textarea, button {
         position: relative;
         z-index: 55;
         padding-top: 0.75rem;
-        padding-bottom: max(0.9rem, env(safe-area-inset-bottom));
+        /* Brave/Chrome Android dapat menimpa area bawah dengan toolbar browser. */
+        padding-bottom: calc(max(0.9rem, env(safe-area-inset-bottom)) + 72px);
+    }
+    #summary-modal > div > div:last-child {
+        padding-bottom: calc(1rem + max(env(safe-area-inset-bottom), 16px));
     }
     #btn-open-summary {
         position: static !important;
@@ -823,7 +827,7 @@ input, select, textarea, button {
 <div class="bg-white rounded-2xl shadow-soft p-5 md:p-7 border border-slate-100 space-y-6">
 <h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider flex items-center gap-2"><i class="ph-fill ph-camera text-lg"></i> Dokumen Pendukung</h4>
 <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 leading-relaxed">
-<div class="flex items-start gap-2"><i class="ph-fill ph-map-pin text-lg mt-0.5 shrink-0"></i><div><strong>Geotag hanya wajib untuk foto kondisi rumah.</strong><br/>Foto KK boleh foto biasa. Foto rumah tampak depan, rumah tampak dalam, dan Toilet/WC wajib menggunakan aplikasi geotagging. Sistem menerima GPS dari metadata EXIF atau cap visual <em>GPS Map Camera</em> yang menampilkan Lat/Long seperti contoh foto lapangan.</div></div>
+<div class="flex items-start gap-2"><i class="ph-fill ph-map-pin text-lg mt-0.5 shrink-0"></i><div><div class="mb-2"><span class="inline-flex items-center rounded-full bg-white/80 border border-amber-200 px-2 py-0.5 text-[10px] font-bold tracking-wide">FIX FOTO v4</span></div><strong>Geotag hanya wajib untuk foto kondisi rumah.</strong><br/>Foto KK boleh foto biasa. Foto rumah tampak depan, rumah tampak dalam, dan Toilet/WC wajib menggunakan aplikasi geotagging. Sistem menerima GPS dari metadata EXIF atau cap visual <em>GPS Map Camera</em> yang menampilkan Lat/Long seperti contoh foto lapangan.</div></div>
 </div>
 <div class="grid grid-cols-1 gap-5">
 <div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Kartu Keluarga (jelas dan tidak terpotong)</label><input accept="image/*,.jpg,.jpeg,.png" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" data-geotag-required="false" name="foto_kk" required="" type="file"/><p class="mt-2 text-xs text-slate-500"><i class="ph-bold ph-image"></i> Foto KK boleh foto biasa — geotag tidak diwajibkan.</p></div>
@@ -1434,6 +1438,9 @@ input, select, textarea, button {
                 photoGeotagState.delete(input);
                 photoFileState.delete(input);
                 input.dataset.geotagValid = 'false';
+                input.dataset.photoCached = 'false';
+                // input.files hanya disentuh SEKALI di event change. Setelah ini seluruh alur
+                // memakai salinan data URL di photoFileState agar aman dari izin URI Android yang terputus.
                 const originalFile = input.files?.[0] || null;
 
                 if (!originalFile) {
@@ -1467,6 +1474,7 @@ input, select, textarea, button {
                 }
                 if ((input.files?.[0] || null) !== originalFile) return;
                 photoFileState.set(input, snapshot);
+                input.dataset.photoCached = 'true';
 
                 // KK tidak perlu geotag sama sekali.
                 if (!isGeotagRequired(input)) {
@@ -1489,6 +1497,7 @@ input, select, textarea, button {
                 if (!geo.valid) {
                     photoGeotagState.delete(input);
                     photoFileState.delete(input);
+                    input.dataset.photoCached = 'false';
                     input.value = '';
                     setPhotoGeotagStatus(
                         input,
@@ -1534,21 +1543,19 @@ input, select, textarea, button {
             return payload;
         };
 
-        const extractValuesAsync = async (container) => {
+        const extractValuesCached = (container) => {
             const data = extractValues(container);
             const fileInputs = Array.from(container.querySelectorAll('input[type="file"][name]'));
             for (const input of fileInputs) {
-                const selectedFile = input.files?.[0] || null;
                 const requireGeotag = isGeotagRequired(input);
                 const geotag = photoGeotagState.get(input);
                 const snapshot = photoFileState.get(input);
 
-                if (!selectedFile) {
+                // PENTING: jangan akses input.files lagi di tahap ringkasan/kirim.
+                // Android/Brave dapat mencabut izin content URI setelah picker ditutup walaupun nama file masih tampil.
+                if (!snapshot || input.dataset.photoCached !== 'true') {
                     data[input.name] = null;
-                    continue;
-                }
-                if (!snapshot) {
-                    throw new Error(`${getPhotoLabel(input)} perlu dipilih ulang karena salinan foto belum tersimpan di browser.`);
+                    throw new Error(`${getPhotoLabel(input)} belum tersimpan aman. Pilih ulang foto tersebut satu kali.`);
                 }
                 if (requireGeotag && (!geotag || geotag.valid !== true)) {
                     throw new Error(`${getPhotoLabel(input)} belum memiliki geotag yang valid.`);
@@ -1613,7 +1620,8 @@ input, select, textarea, button {
                 const type = (el.type || '').toLowerCase();
                 if (type === 'checkbox' || el.name === 'jumlah') return; // ditangani khusus di bawah
                 if (type === 'file') {
-                    if (!el.files || !el.files.length || !photoFileState.get(el)) {
+                    // Setelah event change, validasi HANYA salinan memori. Jangan baca input.files lagi.
+                    if (el.dataset.photoCached !== 'true' || !photoFileState.get(el)) {
                         addError(el);
                     } else if (isGeotagRequired(el) && (el.dataset.geotagValid !== 'true' || !photoGeotagState.get(el)?.valid)) {
                         addError(el);
@@ -1745,7 +1753,7 @@ input, select, textarea, button {
         const btnOpenSummary = document.getElementById('btn-open-summary');
         
         // --- Open Summary ---
-        btnOpenSummary.addEventListener('click', async () => {
+        btnOpenSummary.addEventListener('click', () => {
             if (!validateAllData()) return;
             try {
                 finalPayload = {
@@ -1759,13 +1767,16 @@ input, select, textarea, button {
                         urutan_anggota: card.dataset.urutan,
                         ...extractValues(card)
                     })),
-                    dokumen: await extractValuesAsync(document.getElementById('sec-5'))
+                    dokumen: extractValuesCached(document.getElementById('sec-5'))
                 };
                 
                 document.getElementById('summary-content').innerHTML = generateSummaryHTML(finalPayload);
                 summaryModal.classList.remove('hidden');
             } catch (error) {
-                showValidationToast(0, error.message || 'Foto geotag belum valid.');
+                const msg = error?.name === 'NotReadableError'
+                    ? 'Browser kehilangan akses ke file asli. Foto harus dipilih ulang sekali; setelah status hijau muncul, sistem memakai salinan memori.'
+                    : (error.message || 'Foto geotag belum valid.');
+                showValidationToast(0, msg);
             }
         });
 
@@ -1788,7 +1799,7 @@ input, select, textarea, button {
             try {
                 // Bangun ulang bagian dokumen tepat sebelum kirim agar foto yang berubah setelah ringkasan
                 // tidak dapat lolos tanpa pemeriksaan geotag.
-                finalPayload.dokumen = await extractValuesAsync(document.getElementById('sec-5'));
+                finalPayload.dokumen = extractValuesCached(document.getElementById('sec-5'));
 
                 // Fetch logic (tetap menggunakan target URL bawaan)
                 const res = await fetch('https://script.google.com/macros/s/AKfycbwMly_eKkNBxA8B-P_RAjew3Nw_d-Nfat0FxEc4UWbCHoZcNyJg25rR0aNwAQ5qdm6G/exec', {
@@ -1830,41 +1841,12 @@ input, select, textarea, button {
         });
     </script>
 
+
 <script>
-(function(){
-document.addEventListener('DOMContentLoaded', function(){
-
-    const form = document.querySelector('form');
-    if (!form) return;
-
-    form.addEventListener('submit', function(e){
-
-        const requiredImages = document.querySelectorAll('input[type="file"][required]');
-        let missing = false;
-
-        requiredImages.forEach(function(input){
-            if (!input.files || input.files.length === 0){
-                missing = true;
-            }
-        });
-
-        if (missing){
-            e.preventDefault();
-            alert('Semua foto wajib diupload sebelum data dikirim.');
-            return false;
-        }
-
-        const buttons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
-        buttons.forEach(function(btn){
-            btn.disabled = true;
-            btn.innerText = 'Mengirim data...';
-        });
-
-    });
-
-});
-})();
+// FIX v4: tidak ada lagi validasi submit lama yang membaca input.files.
+// Pengiriman dilakukan hanya melalui tombol Ringkasan -> Kirim Data Final dengan cache foto di memori.
 </script>
+
 
 </body>
 </html>
