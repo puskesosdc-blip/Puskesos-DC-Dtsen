@@ -827,7 +827,7 @@ input, select, textarea, button {
 <div class="bg-white rounded-2xl shadow-soft p-5 md:p-7 border border-slate-100 space-y-6">
 <h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider flex items-center gap-2"><i class="ph-fill ph-camera text-lg"></i> Dokumen Pendukung</h4>
 <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 leading-relaxed">
-<div class="flex items-start gap-2"><i class="ph-fill ph-map-pin text-lg mt-0.5 shrink-0"></i><div><div class="mb-2"><span class="inline-flex items-center rounded-full bg-white/80 border border-amber-200 px-2 py-0.5 text-[10px] font-bold tracking-wide">FIX FOTO v4</span></div><strong>Geotag hanya wajib untuk foto kondisi rumah.</strong><br/>Foto KK boleh foto biasa. Foto rumah tampak depan, rumah tampak dalam, dan Toilet/WC wajib menggunakan aplikasi geotagging. Sistem menerima GPS dari metadata EXIF atau cap visual <em>GPS Map Camera</em> yang menampilkan Lat/Long seperti contoh foto lapangan.</div></div>
+<div class="flex items-start gap-2"><i class="ph-fill ph-map-pin text-lg mt-0.5 shrink-0"></i><div><div class="mb-2"><span class="inline-flex items-center rounded-full bg-white/80 border border-amber-200 px-2 py-0.5 text-[10px] font-bold tracking-wide">FIX FOTO v5</span></div><strong>Geotag hanya wajib untuk foto kondisi rumah.</strong><br/>Foto KK boleh foto biasa. Foto rumah tampak depan, rumah tampak dalam, dan Toilet/WC wajib menggunakan aplikasi geotagging. Sistem menerima GPS dari metadata EXIF atau cap visual <em>GPS Map Camera</em> yang menampilkan Lat/Long seperti contoh foto lapangan.</div></div>
 </div>
 <div class="grid grid-cols-1 gap-5">
 <div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Kartu Keluarga (jelas dan tidak terpotong)</label><input accept="image/*,.jpg,.jpeg,.png" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" data-geotag-required="false" name="foto_kk" required="" type="file"/><p class="mt-2 text-xs text-slate-500"><i class="ph-bold ph-image"></i> Foto KK boleh foto biasa — geotag tidak diwajibkan.</p></div>
@@ -848,7 +848,7 @@ input, select, textarea, button {
 <footer class="hidden bg-white border-t border-slate-200 px-4 py-4 shrink-0 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.05)] relative z-40" id="form-footer">
 <div class="max-w-3xl mx-auto flex items-center justify-between gap-4">
 <p class="text-xs text-slate-500 hidden md:block w-1/2">Pastikan seluruh isian sudah diperiksa sebelum melakukan pengiriman.</p>
-<button class="w-full md:w-auto flex-1 bg-brand-600 text-white font-semibold py-3.5 px-6 rounded-xl hover:bg-brand-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-500/30" id="btn-open-summary">
+<button class="w-full md:w-auto flex-1 bg-brand-600 text-white font-semibold py-3.5 px-6 rounded-xl hover:bg-brand-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-500/30" type="button" id="btn-open-summary">
                 Simpan &amp; Periksa Ringkasan <i class="ph-bold ph-arrow-right"></i>
 </button>
 </div>
@@ -861,14 +861,14 @@ input, select, textarea, button {
 <h3 class="font-bold text-lg text-slate-900 leading-none">Ringkasan Data Survei</h3>
 <p class="text-xs text-slate-500 mt-1">Periksa kembali data sebelum dikirim permanen.</p>
 </div>
-<button class="text-slate-400 hover:text-slate-700 bg-white p-2 rounded-lg border border-slate-200" id="btn-close-modal"><i class="ph-bold ph-x"></i></button>
+<button class="text-slate-400 hover:text-slate-700 bg-white p-2 rounded-lg border border-slate-200" type="button" id="btn-close-modal"><i class="ph-bold ph-x"></i></button>
 </div>
 <div class="p-5 overflow-y-auto flex-1 space-y-5 text-sm" id="summary-content">
 <!-- Konten digenerate dari JS -->
 </div>
 <div class="p-4 border-t border-slate-100 bg-white flex gap-3">
-<button class="flex-1 py-3.5 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors" id="btn-edit-again">Edit Kembali</button>
-<button class="flex-1 py-3.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all flex justify-center items-center gap-2 shadow-lg shadow-emerald-600/30" id="btn-confirm-submit">
+<button class="flex-1 py-3.5 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors" type="button" id="btn-edit-again">Edit Kembali</button>
+<button class="flex-1 py-3.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all flex justify-center items-center gap-2 shadow-lg shadow-emerald-600/30" type="button" id="btn-confirm-submit">
                     Kirim Data Final <i class="ph-bold ph-paper-plane-right"></i>
 </button>
 </div>
@@ -1157,35 +1157,32 @@ input, select, textarea, button {
 
         const isGeotagRequired = (input) => input?.dataset?.geotagRequired === 'true';
 
-        const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = () => reject(reader.error || new Error('Foto tidak dapat disalin.'));
-            reader.readAsDataURL(blob);
-        });
+        // FIX v5: File/Blob dari picker Android tidak pernah disimpan untuk dipakai saat Ringkasan/Kirim.
+        // File dibaca SATU KALI di event change, diubah menjadi ArrayBuffer + data URL plain string,
+        // lalu reference input file langsung dilepas. Dengan begitu Brave/Chrome tidak perlu membaca
+        // kembali content:// URI yang izinnya dapat kadaluarsa.
+        const arrayBufferToDataUrl = (buffer, mime = 'image/jpeg') => {
+            const bytes = new Uint8Array(buffer);
+            const chunkSize = 0x8000;
+            let binary = '';
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+                binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunkSize, bytes.length)));
+            }
+            return `data:${mime};base64,${btoa(binary)}`;
+        };
 
         const snapshotSelectedPhoto = async (file) => {
             if (!file) throw new Error('File foto tidak ditemukan.');
             const buffer = await file.arrayBuffer();
             const mime = file.type || 'image/jpeg';
-            let detachedFile;
-            try {
-                detachedFile = new File([buffer], file.name || 'foto.jpg', {
-                    type: mime,
-                    lastModified: file.lastModified || Date.now()
-                });
-            } catch (_) {
-                detachedFile = new Blob([buffer], { type: mime });
-                try { Object.defineProperty(detachedFile, 'name', { value: file.name || 'foto.jpg' }); } catch (_) {}
-            }
-            const dataUrl = await blobToDataUrl(detachedFile);
-            return {
-                file: detachedFile,
+            const workingBlob = new Blob([buffer], { type: mime });
+            const snapshot = {
                 name: file.name || 'foto.jpg',
                 type: mime,
                 size: file.size || buffer.byteLength,
-                dataUrl
+                dataUrl: arrayBufferToDataUrl(buffer, mime)
             };
+            return { snapshot, workingBlob };
         };
         const getPhotoLabel = (input) => input.closest('div')?.querySelector('label')?.textContent?.trim() || 'Foto';
 
@@ -1432,17 +1429,20 @@ input, select, textarea, button {
         };
 
         const requiredPhotoInputs = Array.from(document.querySelectorAll('#sec-5 input[type="file"][required]'));
+        let photoSelectionSequence = 0;
         requiredPhotoInputs.forEach(input => {
             getPhotoStatusElement(input);
             input.addEventListener('change', async () => {
+                const token = String(++photoSelectionSequence);
+                input.dataset.photoToken = token;
                 photoGeotagState.delete(input);
                 photoFileState.delete(input);
                 input.dataset.geotagValid = 'false';
                 input.dataset.photoCached = 'false';
-                // input.files hanya disentuh SEKALI di event change. Setelah ini seluruh alur
-                // memakai salinan data URL di photoFileState agar aman dari izin URI Android yang terputus.
-                const originalFile = input.files?.[0] || null;
+                input.dataset.cachedFileName = '';
 
+                // HANYA titik ini yang boleh menyentuh input.files.
+                const originalFile = input.files && input.files.length ? input.files[0] : null;
                 if (!originalFile) {
                     setPhotoGeotagStatus(input, 'empty', isGeotagRequired(input)
                         ? '<i class="ph-bold ph-map-pin"></i> Wajib geotag: GPS/EXIF atau cap GPS Map Camera dengan Lat/Long.'
@@ -1450,7 +1450,8 @@ input, select, textarea, button {
                     return;
                 }
 
-                const isImage = /^image\//i.test(originalFile.type || '') || /\.(jpe?g|png|webp)$/i.test(originalFile.name || '');
+                const fileName = originalFile.name || 'foto.jpg';
+                const isImage = /^image\//i.test(originalFile.type || '') || /\.(jpe?g|png|webp)$/i.test(fileName);
                 if (!isImage) {
                     input.value = '';
                     setPhotoGeotagStatus(input, 'invalid', '<i class="ph-bold ph-x-circle"></i> Foto ditolak: file harus berupa gambar.');
@@ -1458,47 +1459,51 @@ input, select, textarea, button {
                     return;
                 }
 
-                // Salin bytes SEKARANG saat izin picker Android masih aktif. Semua proses selanjutnya
-                // (EXIF, OCR, ringkasan, dan kirim) memakai salinan ini, bukan membaca ulang content URI.
-                setPhotoGeotagStatus(input, 'checking', '<i class="ph-bold ph-spinner animate-spin"></i> Menyiapkan foto...');
-                let snapshot;
+                setPhotoGeotagStatus(input, 'checking', `<i class="ph-bold ph-spinner animate-spin"></i> Menyalin ${fileName} ke memori aplikasi...`);
+                let prepared;
                 try {
-                    snapshot = await snapshotSelectedPhoto(originalFile);
+                    prepared = await snapshotSelectedPhoto(originalFile);
                 } catch (error) {
-                    if ((input.files?.[0] || null) !== originalFile) return;
+                    if (input.dataset.photoToken !== token) return;
                     input.value = '';
                     photoFileState.delete(input);
-                    setPhotoGeotagStatus(input, 'invalid', '<i class="ph-bold ph-x-circle"></i> Foto tidak dapat dibaca oleh browser. Pilih ulang foto langsung dari Galeri/File perangkat.');
-                    showValidationToast(0, 'Akses ke foto terputus. Silakan pilih ulang foto dari Galeri/File perangkat.');
+                    setPhotoGeotagStatus(input, 'invalid', '<i class="ph-bold ph-x-circle"></i> Foto tidak dapat dibaca oleh browser. Pilih ulang langsung dari Galeri/File perangkat.');
+                    showValidationToast(0, 'Akses foto terputus saat pertama dibaca. Pilih ulang foto langsung dari Galeri/File perangkat.');
                     return;
                 }
-                if ((input.files?.[0] || null) !== originalFile) return;
+                if (input.dataset.photoToken !== token) return;
+
+                // Mulai titik ini, reference file picker DILEPAS. Ringkasan dan pengiriman hanya memakai
+                // snapshot plain string di WeakMap; tidak ada FileReader/File/Blob yang dibaca ulang.
+                const snapshot = prepared.snapshot;
+                const workingBlob = prepared.workingBlob;
                 photoFileState.set(input, snapshot);
                 input.dataset.photoCached = 'true';
+                input.dataset.cachedFileName = snapshot.name;
+                input.value = '';
 
-                // KK tidak perlu geotag sama sekali.
+                // KK tidak wajib geotag.
                 if (!isGeotagRequired(input)) {
                     input.dataset.geotagValid = 'not-required';
-                    setPhotoGeotagStatus(input, 'valid', '<i class="ph-bold ph-check-circle"></i> Foto KK siap ✓ &nbsp; Geotag tidak diwajibkan.');
+                    setPhotoGeotagStatus(input, 'valid', `<i class="ph-bold ph-check-circle"></i> Foto KK tersimpan aman ✓ &nbsp; ${snapshot.name} · Geotag tidak diwajibkan.`);
                     return;
                 }
 
-                setPhotoGeotagStatus(input, 'checking', '<i class="ph-bold ph-spinner animate-spin"></i> Memeriksa GPS/EXIF pada foto...');
-                let geo = await readExifGps(snapshot.file);
-                if ((input.files?.[0] || null) !== originalFile) return;
+                setPhotoGeotagStatus(input, 'checking', `<i class="ph-bold ph-spinner animate-spin"></i> ${snapshot.name} tersimpan. Memeriksa GPS/EXIF...`);
+                let geo = await readExifGps(workingBlob);
+                if (input.dataset.photoToken !== token) return;
 
-                // GPS Map Camera tertentu menaruh lokasi sebagai cap/tulisan di foto, tetapi tidak menyimpan EXIF.
                 if (!geo.valid) {
-                    setPhotoGeotagStatus(input, 'checking', '<i class="ph-bold ph-spinner animate-spin"></i> EXIF tidak ada. Memeriksa cap GPS Map Camera dan Lat/Long pada foto...');
-                    geo = await readVisualGeotag(snapshot.file);
+                    setPhotoGeotagStatus(input, 'checking', `<i class="ph-bold ph-spinner animate-spin"></i> EXIF tidak ada. Memeriksa cap GPS Map Camera dan Lat/Long...`);
+                    geo = await readVisualGeotag(workingBlob);
                 }
-                if ((input.files?.[0] || null) !== originalFile) return;
+                if (input.dataset.photoToken !== token) return;
 
                 if (!geo.valid) {
                     photoGeotagState.delete(input);
                     photoFileState.delete(input);
                     input.dataset.photoCached = 'false';
-                    input.value = '';
+                    input.dataset.cachedFileName = '';
                     setPhotoGeotagStatus(
                         input,
                         'invalid',
@@ -1513,7 +1518,7 @@ input, select, textarea, button {
                 setPhotoGeotagStatus(
                     input,
                     'valid',
-                    `<i class="ph-bold ph-check-circle"></i> Geotag terdeteksi ✓ &nbsp; ${sourceLabel} · ${geo.latitude.toFixed(6)}, ${geo.longitude.toFixed(6)}`
+                    `<i class="ph-bold ph-check-circle"></i> Foto tersimpan aman ✓ &nbsp; ${snapshot.name}<br><span class="inline-flex mt-1"><i class="ph-bold ph-map-pin mr-1"></i> Geotag ${sourceLabel} · ${geo.latitude.toFixed(6)}, ${geo.longitude.toFixed(6)}</span>`
                 );
             });
         });
@@ -1796,21 +1801,29 @@ input, select, textarea, button {
             btnConfirm.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> Memproses...';
             btnConfirm.disabled = true;
 
+            let submitPhase = 'menyiapkan data';
             try {
-                // Bangun ulang bagian dokumen tepat sebelum kirim agar foto yang berubah setelah ringkasan
-                // tidak dapat lolos tanpa pemeriksaan geotag.
+                // Bangun ulang dokumen dari CACHE MEMORI. Tidak menyentuh input.files.
                 finalPayload.dokumen = extractValuesCached(document.getElementById('sec-5'));
 
-                // Fetch logic (tetap menggunakan target URL bawaan)
+                submitPhase = 'membuat payload';
+                const requestBody = JSON.stringify(finalPayload);
+                if (!requestBody || requestBody.length < 100) {
+                    throw new Error('Payload kosong atau tidak valid.');
+                }
+
+                submitPhase = 'mengirim ke server';
                 const res = await fetch('https://script.google.com/macros/s/AKfycbwMly_eKkNBxA8B-P_RAjew3Nw_d-Nfat0FxEc4UWbCHoZcNyJg25rR0aNwAQ5qdm6G/exec', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' }, 
-                    body: JSON.stringify(finalPayload)
+                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                    body: requestBody
                 });
-                
+
+                submitPhase = 'membaca respons server';
+                const responseText = await res.text();
                 let responseData;
                 try {
-                    responseData = await res.json();
+                    responseData = JSON.parse(responseText);
                 } catch (parseError) {
                     throw new Error('Respons server tidak valid. Pastikan deployment Google Apps Script sudah diperbarui.');
                 }
@@ -1834,7 +1847,8 @@ input, select, textarea, button {
                     document.querySelector('main').scrollTo({ top: 0, behavior: 'smooth' });
                 }, 1000);
             } catch (err) {
-                alert("Gagal mengirim data: " + err.message);
+                const detail = err && err.message ? err.message : String(err);
+                alert(`Gagal pada tahap ${submitPhase}: ${detail}`);
                 btnConfirm.innerHTML = originalHTML;
                 btnConfirm.disabled = false;
             }
@@ -1843,7 +1857,7 @@ input, select, textarea, button {
 
 
 <script>
-// FIX v4: tidak ada lagi validasi submit lama yang membaca input.files.
+// FIX v5: input file dilepas segera setelah bytes tersalin; Ringkasan/Kirim memakai plain data URL saja.
 // Pengiriman dilakukan hanya melalui tombol Ringkasan -> Kirim Data Final dengan cache foto di memori.
 </script>
 
