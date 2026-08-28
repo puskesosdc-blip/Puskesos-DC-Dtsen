@@ -25,3 +25,11 @@ PERUBAHAN VALIDASI FOTO GEOTAG
 
 CATATAN KONEKSI:
 Pemeriksaan cap visual membutuhkan internet saat halaman dibuka untuk memuat Tesseract.js dari CDN. Jika GPS/EXIF tersedia, foto dapat lolos tanpa OCR.
+
+
+=== FIX V3 - 28/08/2026 ===
+- Memperbaiki NotReadableError/permission file Android: foto disalin ke memori browser saat dipilih dan tidak dibaca ulang saat Ringkasan/Kirim.
+- Foto KK tetap tidak wajib geotag.
+- Foto rumah depan/dalam/toilet tetap wajib geotag EXIF atau cap GPS Map Camera.
+- Footer/tombol Simpan & Periksa Ringkasan memakai dynamic visual viewport + safe-area agar tidak tertutup toolbar browser HP.
+- Pesan error file dibuat lebih ramah dan tidak menampilkan error permission mentah.

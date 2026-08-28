@@ -29,7 +29,20 @@
         }
     </script>
 <style>
-        body { background-color: #f8fafc; }
+        :root { --app-viewport-height: 100dvh; }
+        html { height: 100%; }
+        body {
+            background-color: #f8fafc;
+            height: 100vh;
+            height: var(--app-viewport-height, 100dvh);
+            min-height: 100svh;
+        }
+        #form-footer {
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        }
+        @supports (height: 100dvh) {
+            body { height: var(--app-viewport-height, 100dvh); }
+        }
         input, select, textarea, button { transition: all 0.25s ease; }
         input:focus, select:focus, textarea:focus { outline: none; }
         ::-webkit-scrollbar { width: 8px; }
@@ -62,6 +75,18 @@ input, select, textarea, button {
 @media (max-width: 640px) {
     body { font-size: 14px; }
     .grid { grid-template-columns: 1fr !important; }
+    #form-footer {
+        position: relative;
+        z-index: 55;
+        padding-top: 0.75rem;
+        padding-bottom: max(0.9rem, env(safe-area-inset-bottom));
+    }
+    #btn-open-summary {
+        position: static !important;
+        bottom: auto !important;
+        min-height: 54px;
+        font-size: 16px;
+    }
     button[type="submit"], #submitBtn, .submit-btn {
         width: 100% !important;
         min-height: 52px;
@@ -89,7 +114,7 @@ input, select, textarea, button {
 </style>
 
 </head>
-<body class="text-slate-800 antialiased h-screen flex flex-col overflow-hidden selection:bg-brand-100 selection:text-brand-700 relative">
+<body class="text-slate-800 antialiased flex flex-col overflow-hidden selection:bg-brand-100 selection:text-brand-700 relative">
 <!-- Halaman pembuka sebelum masuk ke pertanyaan DTSEN -->
 <div class="intro-scroll fixed inset-0 z-[100] overflow-y-auto px-4 py-8 md:py-12 bg-slate-900" id="intro-page">
 <div class="fixed inset-0 pointer-events-none bg-center bg-cover bg-no-repeat" style="background-image: url('intro-bg.webp');"></div>
@@ -131,7 +156,7 @@ input, select, textarea, button {
 <div class="flex items-start gap-3">
 <i class="ph-fill ph-warning-circle text-2xl shrink-0"></i>
 <div>
-<p class="font-bold">Semua data harus diisi</p>
+<p class="font-bold">Periksa data &amp; foto</p>
 <p class="text-sm text-red-50 mt-0.5" id="validation-toast-detail">Lengkapi semua pertanyaan sebelum melanjutkan.</p>
 </div>
 </div>
@@ -846,6 +871,17 @@ input, select, textarea, button {
 </div>
 </div>
 <script>
+        // --- Tinggi viewport mobile dinamis ---
+        // Mengikuti area browser yang benar-benar terlihat agar footer/tombol tidak tertutup toolbar HP.
+        const syncAppViewportHeight = () => {
+            const height = window.visualViewport?.height || window.innerHeight;
+            if (height) document.documentElement.style.setProperty('--app-viewport-height', `${Math.round(height)}px`);
+        };
+        syncAppViewportHeight();
+        window.addEventListener('resize', syncAppViewportHeight, { passive: true });
+        window.visualViewport?.addEventListener('resize', syncAppViewportHeight, { passive: true });
+        window.visualViewport?.addEventListener('scroll', syncAppViewportHeight, { passive: true });
+
         // --- Halaman Pembuka ---
         document.getElementById('btn-start-form').addEventListener('click', () => {
             document.getElementById('intro-page').classList.add('hidden');
@@ -1110,8 +1146,43 @@ input, select, textarea, button {
         // Foto KK boleh foto biasa. Foto kondisi rumah wajib lolos geotag SEBELUM dibuat menjadi payload.
         // Geotag diterima dari GPS/EXIF atau cap visual GPS Map Camera yang memuat Lat/Long.
         const photoGeotagState = new WeakMap();
+        // Menyimpan SALINAN bytes foto segera setelah dipilih.
+        // Ini penting di Android/Brave/Chrome: izin file dari content provider kadang hanya sementara,
+        // sehingga membaca ulang input.files saat membuka ringkasan dapat memunculkan NotReadableError.
+        const photoFileState = new WeakMap();
 
         const isGeotagRequired = (input) => input?.dataset?.geotagRequired === 'true';
+
+        const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error || new Error('Foto tidak dapat disalin.'));
+            reader.readAsDataURL(blob);
+        });
+
+        const snapshotSelectedPhoto = async (file) => {
+            if (!file) throw new Error('File foto tidak ditemukan.');
+            const buffer = await file.arrayBuffer();
+            const mime = file.type || 'image/jpeg';
+            let detachedFile;
+            try {
+                detachedFile = new File([buffer], file.name || 'foto.jpg', {
+                    type: mime,
+                    lastModified: file.lastModified || Date.now()
+                });
+            } catch (_) {
+                detachedFile = new Blob([buffer], { type: mime });
+                try { Object.defineProperty(detachedFile, 'name', { value: file.name || 'foto.jpg' }); } catch (_) {}
+            }
+            const dataUrl = await blobToDataUrl(detachedFile);
+            return {
+                file: detachedFile,
+                name: file.name || 'foto.jpg',
+                type: mime,
+                size: file.size || buffer.byteLength,
+                dataUrl
+            };
+        };
         const getPhotoLabel = (input) => input.closest('div')?.querySelector('label')?.textContent?.trim() || 'Foto';
 
         const getPhotoStatusElement = (input) => {
@@ -1361,43 +1432,63 @@ input, select, textarea, button {
             getPhotoStatusElement(input);
             input.addEventListener('change', async () => {
                 photoGeotagState.delete(input);
+                photoFileState.delete(input);
                 input.dataset.geotagValid = 'false';
-                const file = input.files?.[0] || null;
+                const originalFile = input.files?.[0] || null;
 
-                if (!file) {
+                if (!originalFile) {
                     setPhotoGeotagStatus(input, 'empty', isGeotagRequired(input)
                         ? '<i class="ph-bold ph-map-pin"></i> Wajib geotag: GPS/EXIF atau cap GPS Map Camera dengan Lat/Long.'
                         : '<i class="ph-bold ph-image"></i> Foto biasa diperbolehkan; geotag tidak diwajibkan.');
                     return;
                 }
 
+                const isImage = /^image\//i.test(originalFile.type || '') || /\.(jpe?g|png|webp)$/i.test(originalFile.name || '');
+                if (!isImage) {
+                    input.value = '';
+                    setPhotoGeotagStatus(input, 'invalid', '<i class="ph-bold ph-x-circle"></i> Foto ditolak: file harus berupa gambar.');
+                    showValidationToast(0, 'File yang dipilih harus berupa gambar.');
+                    return;
+                }
+
+                // Salin bytes SEKARANG saat izin picker Android masih aktif. Semua proses selanjutnya
+                // (EXIF, OCR, ringkasan, dan kirim) memakai salinan ini, bukan membaca ulang content URI.
+                setPhotoGeotagStatus(input, 'checking', '<i class="ph-bold ph-spinner animate-spin"></i> Menyiapkan foto...');
+                let snapshot;
+                try {
+                    snapshot = await snapshotSelectedPhoto(originalFile);
+                } catch (error) {
+                    if ((input.files?.[0] || null) !== originalFile) return;
+                    input.value = '';
+                    photoFileState.delete(input);
+                    setPhotoGeotagStatus(input, 'invalid', '<i class="ph-bold ph-x-circle"></i> Foto tidak dapat dibaca oleh browser. Pilih ulang foto langsung dari Galeri/File perangkat.');
+                    showValidationToast(0, 'Akses ke foto terputus. Silakan pilih ulang foto dari Galeri/File perangkat.');
+                    return;
+                }
+                if ((input.files?.[0] || null) !== originalFile) return;
+                photoFileState.set(input, snapshot);
+
                 // KK tidak perlu geotag sama sekali.
                 if (!isGeotagRequired(input)) {
-                    const isImage = /^image\//i.test(file.type || '') || /\.(jpe?g|png|webp)$/i.test(file.name || '');
-                    if (!isImage) {
-                        input.value = '';
-                        setPhotoGeotagStatus(input, 'invalid', '<i class="ph-bold ph-x-circle"></i> Foto KK ditolak: file harus berupa gambar.');
-                        showValidationToast(0, 'Foto KK harus berupa file gambar.');
-                        return;
-                    }
                     input.dataset.geotagValid = 'not-required';
                     setPhotoGeotagStatus(input, 'valid', '<i class="ph-bold ph-check-circle"></i> Foto KK siap ✓ &nbsp; Geotag tidak diwajibkan.');
                     return;
                 }
 
                 setPhotoGeotagStatus(input, 'checking', '<i class="ph-bold ph-spinner animate-spin"></i> Memeriksa GPS/EXIF pada foto...');
-                let geo = await readExifGps(file);
-                if ((input.files?.[0] || null) !== file) return;
+                let geo = await readExifGps(snapshot.file);
+                if ((input.files?.[0] || null) !== originalFile) return;
 
                 // GPS Map Camera tertentu menaruh lokasi sebagai cap/tulisan di foto, tetapi tidak menyimpan EXIF.
                 if (!geo.valid) {
                     setPhotoGeotagStatus(input, 'checking', '<i class="ph-bold ph-spinner animate-spin"></i> EXIF tidak ada. Memeriksa cap GPS Map Camera dan Lat/Long pada foto...');
-                    geo = await readVisualGeotag(file);
+                    geo = await readVisualGeotag(snapshot.file);
                 }
-                if ((input.files?.[0] || null) !== file) return;
+                if ((input.files?.[0] || null) !== originalFile) return;
 
                 if (!geo.valid) {
                     photoGeotagState.delete(input);
+                    photoFileState.delete(input);
                     input.value = '';
                     setPhotoGeotagStatus(
                         input,
@@ -1418,45 +1509,51 @@ input, select, textarea, button {
             });
         });
 
-        const fileToPayload = (file, geotag, requireGeotag = false) => new Promise((resolve, reject) => {
-            if (!file) return resolve(null);
-            if (requireGeotag && (!geotag || geotag.valid !== true)) return reject(new Error('Foto kondisi rumah tanpa geotag tidak boleh dikirim.'));
-            const reader = new FileReader();
-            reader.onload = () => {
-                const payload = {
-                    name: file.name,
-                    type: file.type,
-                    size: file.size,
-                    data: reader.result
-                };
-                if (requireGeotag) {
-                    payload.geotag = {
-                        valid: true,
-                        latitude: geotag.latitude,
-                        longitude: geotag.longitude,
-                        source: geotag.source,
-                        proof: geotag.proof || null
-                    };
-                } else {
-                    payload.geotag = { required: false, source: 'NOT_REQUIRED' };
-                }
-                resolve(payload);
+        const fileToPayload = (snapshot, geotag, requireGeotag = false) => {
+            if (!snapshot) return null;
+            if (requireGeotag && (!geotag || geotag.valid !== true)) {
+                throw new Error('Foto kondisi rumah tanpa geotag tidak boleh dikirim.');
+            }
+            const payload = {
+                name: snapshot.name,
+                type: snapshot.type,
+                size: snapshot.size,
+                data: snapshot.dataUrl
             };
-            reader.onerror = () => reject(reader.error);
-            reader.readAsDataURL(file);
-        });
+            if (requireGeotag) {
+                payload.geotag = {
+                    valid: true,
+                    latitude: geotag.latitude,
+                    longitude: geotag.longitude,
+                    source: geotag.source,
+                    proof: geotag.proof || null
+                };
+            } else {
+                payload.geotag = { required: false, source: 'NOT_REQUIRED' };
+            }
+            return payload;
+        };
 
         const extractValuesAsync = async (container) => {
             const data = extractValues(container);
             const fileInputs = Array.from(container.querySelectorAll('input[type="file"][name]'));
             for (const input of fileInputs) {
-                const file = input.files[0] || null;
+                const selectedFile = input.files?.[0] || null;
                 const requireGeotag = isGeotagRequired(input);
                 const geotag = photoGeotagState.get(input);
-                if (file && requireGeotag && (!geotag || geotag.valid !== true)) {
+                const snapshot = photoFileState.get(input);
+
+                if (!selectedFile) {
+                    data[input.name] = null;
+                    continue;
+                }
+                if (!snapshot) {
+                    throw new Error(`${getPhotoLabel(input)} perlu dipilih ulang karena salinan foto belum tersimpan di browser.`);
+                }
+                if (requireGeotag && (!geotag || geotag.valid !== true)) {
                     throw new Error(`${getPhotoLabel(input)} belum memiliki geotag yang valid.`);
                 }
-                data[input.name] = await fileToPayload(file, geotag, requireGeotag);
+                data[input.name] = fileToPayload(snapshot, geotag, requireGeotag);
             }
             return data;
         };
@@ -1516,7 +1613,7 @@ input, select, textarea, button {
                 const type = (el.type || '').toLowerCase();
                 if (type === 'checkbox' || el.name === 'jumlah') return; // ditangani khusus di bawah
                 if (type === 'file') {
-                    if (!el.files || !el.files.length) {
+                    if (!el.files || !el.files.length || !photoFileState.get(el)) {
                         addError(el);
                     } else if (isGeotagRequired(el) && (el.dataset.geotagValid !== 'true' || !photoGeotagState.get(el)?.valid)) {
                         addError(el);
