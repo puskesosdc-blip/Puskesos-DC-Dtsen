@@ -4,10 +4,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Formulir DTSEN Lengkap</title>
+<title>Formulir DTSEN Lengkap - v4</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
         tailwind.config = {
             theme: {
@@ -28,7 +29,20 @@
         }
     </script>
 <style>
-        body { background-color: #f8fafc; }
+        :root { --app-viewport-height: 100dvh; }
+        html { height: 100%; }
+        body {
+            background-color: #f8fafc;
+            height: 100vh;
+            height: var(--app-viewport-height, 100dvh);
+            min-height: 100svh;
+        }
+        #form-footer {
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        }
+        @supports (height: 100dvh) {
+            body { height: var(--app-viewport-height, 100dvh); }
+        }
         input, select, textarea, button { transition: all 0.25s ease; }
         input:focus, select:focus, textarea:focus { outline: none; }
         ::-webkit-scrollbar { width: 8px; }
@@ -41,9 +55,70 @@
         .intro-scroll { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
         .validation-invalid { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important; }
         .validation-invalid-group { outline: 2px solid #ef4444; outline-offset: 3px; border-radius: 0.75rem; }
+        .photo-geotag-status { margin-top: 0.5rem; font-size: 0.75rem; line-height: 1.25rem; }
+        .photo-geotag-status[data-state="valid"] { color: #15803d; font-weight: 600; }
+        .photo-geotag-status[data-state="invalid"] { color: #dc2626; font-weight: 600; }
+        .photo-geotag-status[data-state="checking"] { color: #b45309; font-weight: 600; }
     </style>
+<!-- Puskesos Responsive Fix -->
+
+<style>
+html { scroll-behavior: smooth; }
+body { overflow-x: hidden; }
+input, select, textarea, button {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.container, main, section {
+    width: 100%;
+}
+@media (max-width: 640px) {
+    body { font-size: 14px; }
+    .grid { grid-template-columns: 1fr !important; }
+    #form-footer {
+        position: relative;
+        z-index: 55;
+        padding-top: 0.75rem;
+        /* Brave/Chrome Android dapat menimpa area bawah dengan toolbar browser. */
+        padding-bottom: calc(max(0.9rem, env(safe-area-inset-bottom)) + 72px);
+    }
+    #summary-modal > div > div:last-child {
+        padding-bottom: calc(1rem + max(env(safe-area-inset-bottom), 16px));
+    }
+    #btn-open-summary {
+        position: static !important;
+        bottom: auto !important;
+        min-height: 54px;
+        font-size: 16px;
+    }
+    button[type="submit"], #submitBtn, .submit-btn {
+        width: 100% !important;
+        min-height: 52px;
+        font-size: 16px;
+        position: sticky;
+        bottom: 12px;
+        z-index: 20;
+    }
+    input, select, textarea {
+        font-size: 16px !important;
+        min-height: 44px;
+    }
+}
+@media (min-width: 641px) and (max-width: 1024px) {
+    .grid { gap: 16px; }
+}
+@media (min-width: 1025px) {
+    body { font-size: 16px; }
+}
+.upload-preview img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+</style>
+
 </head>
-<body class="text-slate-800 antialiased h-screen flex flex-col overflow-hidden selection:bg-brand-100 selection:text-brand-700 relative">
+<body class="text-slate-800 antialiased flex flex-col overflow-hidden selection:bg-brand-100 selection:text-brand-700 relative">
 <!-- Halaman pembuka sebelum masuk ke pertanyaan DTSEN -->
 <div class="intro-scroll fixed inset-0 z-[100] overflow-y-auto px-4 py-8 md:py-12 bg-slate-900" id="intro-page">
 <div class="fixed inset-0 pointer-events-none bg-center bg-cover bg-no-repeat" style="background-image: url('intro-bg.webp');"></div>
@@ -85,7 +160,7 @@
 <div class="flex items-start gap-3">
 <i class="ph-fill ph-warning-circle text-2xl shrink-0"></i>
 <div>
-<p class="font-bold">Semua data harus diisi</p>
+<p class="font-bold">Periksa data &amp; foto</p>
 <p class="text-sm text-red-50 mt-0.5" id="validation-toast-detail">Lengkapi semua pertanyaan sebelum melanjutkan.</p>
 </div>
 </div>
@@ -751,11 +826,14 @@
 </div>
 <div class="bg-white rounded-2xl shadow-soft p-5 md:p-7 border border-slate-100 space-y-6">
 <h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider flex items-center gap-2"><i class="ph-fill ph-camera text-lg"></i> Dokumen Pendukung</h4>
+<div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 leading-relaxed">
+<div class="flex items-start gap-2"><i class="ph-fill ph-map-pin text-lg mt-0.5 shrink-0"></i><div><div class="mb-2"><span class="inline-flex items-center rounded-full bg-white/80 border border-amber-200 px-2 py-0.5 text-[10px] font-bold tracking-wide">FIX FOTO v5</span></div><strong>Geotag hanya wajib untuk foto kondisi rumah.</strong><br/>Foto KK boleh foto biasa. Foto rumah tampak depan, rumah tampak dalam, dan Toilet/WC wajib menggunakan aplikasi geotagging. Sistem menerima GPS dari metadata EXIF atau cap visual <em>GPS Map Camera</em> yang menampilkan Lat/Long seperti contoh foto lapangan.</div></div>
+</div>
 <div class="grid grid-cols-1 gap-5">
-<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Kartu Keluarga (jelas dan tidak terpotong)</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_kk" required="" type="file"/></div>
-<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Rumah (tampak depan)</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_rumah_depan" required="" type="file"/></div>
-<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Rumah tampak dalam</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_rumah_dalam" required="" type="file"/></div>
-<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Toilet/WC</label><input accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="foto_toilet_wc" required="" type="file"/></div>
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Kartu Keluarga (jelas dan tidak terpotong)</label><div class="flex flex-col sm:flex-row gap-2"><input id="input-foto-kk" accept="image/*,.jpg,.jpeg,.png" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" data-geotag-required="false" name="foto_kk" required="" type="file"/><button type="button" class="camera-capture-btn shrink-0 inline-flex items-center justify-center gap-2 bg-slate-100 border border-slate-200 text-slate-700 font-semibold rounded-xl px-4 py-3 text-sm hover:bg-slate-200 transition-colors" data-target-input="input-foto-kk"><i class="ph-bold ph-camera"></i> Kamera</button></div><p class="mt-2 text-xs text-slate-500"><i class="ph-bold ph-image"></i> Foto KK boleh foto biasa — geotag tidak diwajibkan.</p></div>
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Rumah (tampak depan)</label><div class="flex flex-col sm:flex-row gap-2"><input id="input-foto-rumah-depan" accept="image/jpeg,.jpg,.jpeg" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" data-geotag-required="true" name="foto_rumah_depan" required="" type="file"/><button type="button" class="camera-capture-btn shrink-0 inline-flex items-center justify-center gap-2 bg-brand-50 border border-brand-200 text-brand-700 font-semibold rounded-xl px-4 py-3 text-sm hover:bg-brand-100 transition-colors" data-target-input="input-foto-rumah-depan"><i class="ph-bold ph-camera"></i> Kamera Auto-Geotag</button></div></div>
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Rumah tampak dalam</label><div class="flex flex-col sm:flex-row gap-2"><input id="input-foto-rumah-dalam" accept="image/jpeg,.jpg,.jpeg" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" data-geotag-required="true" name="foto_rumah_dalam" required="" type="file"/><button type="button" class="camera-capture-btn shrink-0 inline-flex items-center justify-center gap-2 bg-brand-50 border border-brand-200 text-brand-700 font-semibold rounded-xl px-4 py-3 text-sm hover:bg-brand-100 transition-colors" data-target-input="input-foto-rumah-dalam"><i class="ph-bold ph-camera"></i> Kamera Auto-Geotag</button></div></div>
+<div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Toilet/WC</label><div class="flex flex-col sm:flex-row gap-2"><input id="input-foto-toilet-wc" accept="image/jpeg,.jpg,.jpeg" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" data-geotag-required="true" name="foto_toilet_wc" required="" type="file"/><button type="button" class="camera-capture-btn shrink-0 inline-flex items-center justify-center gap-2 bg-brand-50 border border-brand-200 text-brand-700 font-semibold rounded-xl px-4 py-3 text-sm hover:bg-brand-100 transition-colors" data-target-input="input-foto-toilet-wc"><i class="ph-bold ph-camera"></i> Kamera Auto-Geotag</button></div></div>
 </div>
 <div class="border-t border-slate-100 pt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
 <div><label class="block font-medium text-slate-700 text-sm mb-2">Nomor Kontak</label><input class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" name="nomor_kontak" placeholder="08xxxxxxxxxx" required="" type="tel"/></div>
@@ -770,7 +848,7 @@
 <footer class="hidden bg-white border-t border-slate-200 px-4 py-4 shrink-0 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.05)] relative z-40" id="form-footer">
 <div class="max-w-3xl mx-auto flex items-center justify-between gap-4">
 <p class="text-xs text-slate-500 hidden md:block w-1/2">Pastikan seluruh isian sudah diperiksa sebelum melakukan pengiriman.</p>
-<button class="w-full md:w-auto flex-1 bg-brand-600 text-white font-semibold py-3.5 px-6 rounded-xl hover:bg-brand-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-500/30" id="btn-open-summary">
+<button class="w-full md:w-auto flex-1 bg-brand-600 text-white font-semibold py-3.5 px-6 rounded-xl hover:bg-brand-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-500/30" type="button" id="btn-open-summary">
                 Simpan &amp; Periksa Ringkasan <i class="ph-bold ph-arrow-right"></i>
 </button>
 </div>
@@ -783,20 +861,51 @@
 <h3 class="font-bold text-lg text-slate-900 leading-none">Ringkasan Data Survei</h3>
 <p class="text-xs text-slate-500 mt-1">Periksa kembali data sebelum dikirim permanen.</p>
 </div>
-<button class="text-slate-400 hover:text-slate-700 bg-white p-2 rounded-lg border border-slate-200" id="btn-close-modal"><i class="ph-bold ph-x"></i></button>
+<button class="text-slate-400 hover:text-slate-700 bg-white p-2 rounded-lg border border-slate-200" type="button" id="btn-close-modal"><i class="ph-bold ph-x"></i></button>
 </div>
 <div class="p-5 overflow-y-auto flex-1 space-y-5 text-sm" id="summary-content">
 <!-- Konten digenerate dari JS -->
 </div>
 <div class="p-4 border-t border-slate-100 bg-white flex gap-3">
-<button class="flex-1 py-3.5 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors" id="btn-edit-again">Edit Kembali</button>
-<button class="flex-1 py-3.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all flex justify-center items-center gap-2 shadow-lg shadow-emerald-600/30" id="btn-confirm-submit">
+<button class="flex-1 py-3.5 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors" type="button" id="btn-edit-again">Edit Kembali</button>
+<button class="flex-1 py-3.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all flex justify-center items-center gap-2 shadow-lg shadow-emerald-600/30" type="button" id="btn-confirm-submit">
                     Kirim Data Final <i class="ph-bold ph-paper-plane-right"></i>
 </button>
 </div>
 </div>
 </div>
+<!-- [TAMBAHAN]: Modal Kamera Bawaan dengan Auto Geotag -->
+<div class="fixed inset-0 bg-black z-[70] hidden flex-col" id="camera-modal">
+<div class="flex items-center justify-between px-4 py-3 bg-black/85">
+<div>
+<p class="font-bold text-sm text-white" id="camera-modal-title">Ambil Foto</p>
+<p class="text-xs text-slate-300 mt-0.5" id="camera-geo-status">Mencari sinyal GPS...</p>
+</div>
+<button class="text-white p-2 rounded-lg hover:bg-white/10" id="btn-camera-close" type="button"><i class="ph-bold ph-x text-xl"></i></button>
+</div>
+<div class="flex-1 relative bg-black overflow-hidden flex items-center justify-center">
+<video autoplay="" class="max-w-full max-h-full" id="camera-video" muted="" playsinline=""></video>
+<canvas class="max-w-full max-h-full hidden" id="camera-canvas"></canvas>
+<div class="hidden absolute inset-0 bg-black/85 text-white text-sm p-6 flex-col items-center justify-center text-center gap-2" id="camera-error"></div>
+</div>
+<div class="p-5 bg-black/90 flex items-center justify-center gap-4">
+<button class="hidden px-5 py-3.5 rounded-xl bg-slate-700 text-white font-semibold text-sm" id="btn-camera-retake" type="button"><i class="ph-bold ph-arrow-counter-clockwise"></i> Ulangi</button>
+<button class="w-16 h-16 rounded-full bg-white border-4 border-slate-400 disabled:opacity-40 disabled:cursor-not-allowed" id="btn-camera-shutter" type="button"></button>
+<button class="hidden px-5 py-3.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm flex items-center gap-2" id="btn-camera-use" type="button"><i class="ph-bold ph-check"></i> Gunakan Foto</button>
+</div>
+</div>
 <script>
+        // --- Tinggi viewport mobile dinamis ---
+        // Mengikuti area browser yang benar-benar terlihat agar footer/tombol tidak tertutup toolbar HP.
+        const syncAppViewportHeight = () => {
+            const height = window.visualViewport?.height || window.innerHeight;
+            if (height) document.documentElement.style.setProperty('--app-viewport-height', `${Math.round(height)}px`);
+        };
+        syncAppViewportHeight();
+        window.addEventListener('resize', syncAppViewportHeight, { passive: true });
+        window.visualViewport?.addEventListener('resize', syncAppViewportHeight, { passive: true });
+        window.visualViewport?.addEventListener('scroll', syncAppViewportHeight, { passive: true });
+
         // --- Halaman Pembuka ---
         document.getElementById('btn-start-form').addEventListener('click', () => {
             document.getElementById('intro-page').classList.add('hidden');
@@ -1057,18 +1166,673 @@
             return data;
         };
 
-        const fileToPayload = (file) => new Promise((resolve, reject) => {
-            if (!file) return resolve(null);
-            const reader = new FileReader();
-            reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, data: reader.result });
-            reader.onerror = () => reject(reader.error);
-            reader.readAsDataURL(file);
+        // --- Validasi Foto Dokumen & Geotag ---
+        // Foto KK boleh foto biasa. Foto kondisi rumah wajib lolos geotag SEBELUM dibuat menjadi payload.
+        // Geotag diterima dari GPS/EXIF atau cap visual GPS Map Camera yang memuat Lat/Long.
+        const photoGeotagState = new WeakMap();
+        // Menyimpan SALINAN bytes foto segera setelah dipilih.
+        // Ini penting di Android/Brave/Chrome: izin file dari content provider kadang hanya sementara,
+        // sehingga membaca ulang input.files saat membuka ringkasan dapat memunculkan NotReadableError.
+        const photoFileState = new WeakMap();
+
+        const isGeotagRequired = (input) => input?.dataset?.geotagRequired === 'true';
+
+        // FIX v5: File/Blob dari picker Android tidak pernah disimpan untuk dipakai saat Ringkasan/Kirim.
+        // File dibaca SATU KALI di event change, diubah menjadi ArrayBuffer + data URL plain string,
+        // lalu reference input file langsung dilepas. Dengan begitu Brave/Chrome tidak perlu membaca
+        // kembali content:// URI yang izinnya dapat kadaluarsa.
+        const arrayBufferToDataUrl = (buffer, mime = 'image/jpeg') => {
+            const bytes = new Uint8Array(buffer);
+            const chunkSize = 0x8000;
+            let binary = '';
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+                binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunkSize, bytes.length)));
+            }
+            return `data:${mime};base64,${btoa(binary)}`;
+        };
+
+        const snapshotSelectedPhoto = async (file) => {
+            if (!file) throw new Error('File foto tidak ditemukan.');
+            const buffer = await file.arrayBuffer();
+            const mime = file.type || 'image/jpeg';
+            const workingBlob = new Blob([buffer], { type: mime });
+            const snapshot = {
+                name: file.name || 'foto.jpg',
+                type: mime,
+                size: file.size || buffer.byteLength,
+                dataUrl: arrayBufferToDataUrl(buffer, mime)
+            };
+            return { snapshot, workingBlob };
+        };
+        const getPhotoLabel = (input) => {
+            const scope = input.closest('div');
+            const label = scope?.querySelector('label') || scope?.parentElement?.querySelector('label');
+            return label?.textContent?.trim() || 'Foto';
+        };
+
+        const getPhotoStatusElement = (input) => {
+            let status = input.parentElement?.querySelector('.photo-geotag-status');
+            if (!status) {
+                status = document.createElement('div');
+                status.className = 'photo-geotag-status text-slate-500';
+                status.dataset.state = 'empty';
+                status.innerHTML = isGeotagRequired(input)
+                    ? '<i class="ph-bold ph-map-pin"></i> Wajib geotag: GPS/EXIF atau cap GPS Map Camera dengan Lat/Long.'
+                    : '<i class="ph-bold ph-image"></i> Foto biasa diperbolehkan; geotag tidak diwajibkan.';
+                const anchor = input.parentElement?.classList?.contains('flex') ? input.parentElement : input;
+                anchor.insertAdjacentElement('afterend', status);
+            }
+            return status;
+        };
+
+        const setPhotoGeotagStatus = (input, state, message) => {
+            const status = getPhotoStatusElement(input);
+            status.dataset.state = state;
+            status.innerHTML = message;
+            input.dataset.geotagValid = state === 'valid' ? 'true' : 'false';
+            if (state === 'invalid') input.classList.add('validation-invalid');
+            if (state === 'valid') input.classList.remove('validation-invalid');
+        };
+
+        const readExifGps = async (file) => {
+            if (!file) return { valid: false, reason: 'File foto tidak ditemukan.' };
+
+            const isJpeg = /image\/jpe?g/i.test(file.type || '') || /\.jpe?g$/i.test(file.name || '');
+            if (!isJpeg) {
+                return { valid: false, reason: 'GPS/EXIF hanya dapat dibaca dari JPEG/JPG.' };
+            }
+
+            let buffer;
+            try {
+                buffer = await file.arrayBuffer();
+            } catch (error) {
+                return { valid: false, reason: 'Foto tidak dapat dibaca untuk memeriksa geotag.' };
+            }
+
+            const view = new DataView(buffer);
+            const length = view.byteLength;
+            const safeU16 = (offset, little = false) => {
+                if (offset < 0 || offset + 2 > length) throw new Error('EXIF di luar batas file.');
+                return view.getUint16(offset, little);
+            };
+            const safeU32 = (offset, little = false) => {
+                if (offset < 0 || offset + 4 > length) throw new Error('EXIF di luar batas file.');
+                return view.getUint32(offset, little);
+            };
+
+            try {
+                if (length < 4 || safeU16(0, false) !== 0xFFD8) {
+                    return { valid: false, reason: 'File bukan JPEG yang valid.' };
+                }
+
+                let markerOffset = 2;
+                while (markerOffset + 4 <= length) {
+                    if (view.getUint8(markerOffset) !== 0xFF) {
+                        markerOffset += 1;
+                        continue;
+                    }
+
+                    const marker = view.getUint8(markerOffset + 1);
+                    markerOffset += 2;
+                    if (marker === 0xD8 || marker === 0xD9 || (marker >= 0xD0 && marker <= 0xD7) || marker === 0x01) continue;
+                    if (markerOffset + 2 > length) break;
+
+                    const segmentLength = safeU16(markerOffset, false);
+                    if (segmentLength < 2 || markerOffset + segmentLength > length) break;
+                    const segmentStart = markerOffset + 2;
+
+                    if (marker === 0xE1 && segmentLength >= 8) {
+                        const exifHeader = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
+                        const isExif = exifHeader.every((b, i) => view.getUint8(segmentStart + i) === b);
+                        if (isExif) {
+                            const tiffStart = segmentStart + 6;
+                            if (tiffStart + 8 > length) break;
+
+                            const byteOrder = safeU16(tiffStart, false);
+                            const little = byteOrder === 0x4949;
+                            if (!little && byteOrder !== 0x4D4D) return { valid: false, reason: 'Metadata EXIF rusak atau tidak dikenali.' };
+                            if (safeU16(tiffStart + 2, little) !== 42) return { valid: false, reason: 'Metadata EXIF tidak valid.' };
+
+                            const typeSize = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1, 9: 4, 10: 8 };
+                            const absoluteValueOffset = (entryOffset, type, count) => {
+                                const bytes = (typeSize[type] || 1) * count;
+                                if (bytes <= 4) return entryOffset + 8;
+                                return tiffStart + safeU32(entryOffset + 8, little);
+                            };
+                            const readAscii = (entryOffset, type, count) => {
+                                const begin = absoluteValueOffset(entryOffset, type, count);
+                                let out = '';
+                                for (let i = 0; i < count && begin + i < length; i++) {
+                                    const code = view.getUint8(begin + i);
+                                    if (!code) break;
+                                    out += String.fromCharCode(code);
+                                }
+                                return out.trim().toUpperCase();
+                            };
+                            const readRationals = (entryOffset, type, count) => {
+                                if (type !== 5) return [];
+                                const begin = absoluteValueOffset(entryOffset, type, count);
+                                const values = [];
+                                for (let i = 0; i < count; i++) {
+                                    const off = begin + i * 8;
+                                    const numerator = safeU32(off, little);
+                                    const denominator = safeU32(off + 4, little);
+                                    values.push(denominator ? numerator / denominator : 0);
+                                }
+                                return values;
+                            };
+
+                            const ifd0 = tiffStart + safeU32(tiffStart + 4, little);
+                            const ifd0Count = safeU16(ifd0, little);
+                            let gpsIfdPointer = null;
+                            for (let i = 0; i < ifd0Count; i++) {
+                                const entry = ifd0 + 2 + i * 12;
+                                if (entry + 12 > length) break;
+                                if (safeU16(entry, little) === 0x8825) {
+                                    gpsIfdPointer = safeU32(entry + 8, little);
+                                    break;
+                                }
+                            }
+                            if (gpsIfdPointer === null) return { valid: false, reason: 'Koordinat GPS tidak ditemukan pada metadata EXIF foto.' };
+
+                            const gpsIfd = tiffStart + gpsIfdPointer;
+                            const gpsCount = safeU16(gpsIfd, little);
+                            let latRef = '', lonRef = '';
+                            let latParts = null, lonParts = null;
+                            for (let i = 0; i < gpsCount; i++) {
+                                const entry = gpsIfd + 2 + i * 12;
+                                if (entry + 12 > length) break;
+                                const tag = safeU16(entry, little);
+                                const type = safeU16(entry + 2, little);
+                                const count = safeU32(entry + 4, little);
+                                if (tag === 0x0001) latRef = readAscii(entry, type, count);
+                                if (tag === 0x0002) latParts = readRationals(entry, type, count);
+                                if (tag === 0x0003) lonRef = readAscii(entry, type, count);
+                                if (tag === 0x0004) lonParts = readRationals(entry, type, count);
+                            }
+                            if (!latParts || latParts.length < 3 || !lonParts || lonParts.length < 3 || !latRef || !lonRef) {
+                                return { valid: false, reason: 'Metadata GPS foto tidak lengkap.' };
+                            }
+
+                            let latitude = latParts[0] + latParts[1] / 60 + latParts[2] / 3600;
+                            let longitude = lonParts[0] + lonParts[1] / 60 + lonParts[2] / 3600;
+                            if (latRef === 'S') latitude *= -1;
+                            if (lonRef === 'W') longitude *= -1;
+                            const validLat = Number.isFinite(latitude) && latitude >= -90 && latitude <= 90;
+                            const validLon = Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+                            if (!validLat || !validLon) return { valid: false, reason: 'Koordinat GPS pada foto tidak valid.' };
+
+                            return { valid: true, latitude, longitude, source: 'EXIF_GPS' };
+                        }
+                    }
+                    markerOffset += segmentLength;
+                }
+                return { valid: false, reason: 'Metadata EXIF geotag tidak ditemukan pada foto.' };
+            } catch (error) {
+                return { valid: false, reason: 'Metadata geotag foto tidak dapat diverifikasi.' };
+            }
+        };
+
+        const loadImageForOcr = async (file) => {
+            if (typeof createImageBitmap === 'function') {
+                try { return await createImageBitmap(file); } catch (_) {}
+            }
+            return await new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Gambar tidak dapat dibuka.')); };
+                img.src = url;
+            });
+        };
+
+        const readVisualGeotag = async (file) => {
+            if (!window.Tesseract || typeof window.Tesseract.recognize !== 'function') {
+                return { valid: false, reason: 'Pemeriksa cap GPS Map Camera belum berhasil dimuat. Periksa koneksi internet lalu coba lagi.' };
+            }
+
+            let source;
+            try {
+                source = await loadImageForOcr(file);
+                const width = source.width || source.naturalWidth;
+                const height = source.height || source.naturalHeight;
+                if (!width || !height) throw new Error('Ukuran gambar tidak valid.');
+
+                // Cap GPS Map Camera umumnya berada di bagian bawah foto. OCR hanya area ini agar lebih cepat di HP.
+                const cropY = Math.floor(height * 0.52);
+                const cropH = Math.max(1, height - cropY);
+                const targetW = Math.min(1200, width);
+                const scale = targetW / width;
+                const targetH = Math.max(1, Math.round(cropH * scale));
+                const canvas = document.createElement('canvas');
+                canvas.width = targetW;
+                canvas.height = targetH;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                ctx.drawImage(source, 0, cropY, width, cropH, 0, 0, targetW, targetH);
+
+                const result = await window.Tesseract.recognize(canvas, 'eng', { logger: () => {} });
+                const rawText = result?.data?.text || '';
+                const text = rawText.replace(/,/g, '.').replace(/[–—−]/g, '-').replace(/\s+/g, ' ').trim();
+                const upper = text.toUpperCase();
+
+                // Harus terlihat sebagai cap aplikasi geotag, bukan sekadar angka koordinat acak.
+                const hasGpsMapStamp = /MAP\s*CAMERA/.test(upper) || /GPS\s*CAMERA/.test(upper);
+                let latMatch = text.match(/\bLat(?:itude)?\s*[:=]?\s*([+-]?\d{1,2}(?:\.\d{3,}))\b/i);
+                let lonMatch = text.match(/\b(?:Long|Lon|Longitude)\s*[:=]?\s*([+-]?\d{1,3}(?:\.\d{3,}))\b/i);
+
+                // Fallback untuk OCR yang menghilangkan label Long tetapi masih membaca satu baris "Lat ... Long ..." secara tidak sempurna.
+                if (!latMatch || !lonMatch) {
+                    const pair = text.match(/\bLat\s*[:=]?\s*([+-]?\d{1,2}(?:\.\d{3,})).{0,30}?\bL(?:ong|on|0ng)\s*[:=]?\s*([+-]?\d{1,3}(?:\.\d{3,}))/i);
+                    if (pair) {
+                        latMatch = [pair[0], pair[1]];
+                        lonMatch = [pair[0], pair[2]];
+                    }
+                }
+
+                if (!hasGpsMapStamp || !latMatch || !lonMatch) {
+                    return { valid: false, reason: 'Cap GPS Map Camera beserta tulisan Lat/Long tidak terbaca pada foto.' };
+                }
+
+                const latitude = Number(latMatch[1]);
+                const longitude = Number(lonMatch[1]);
+                if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+                    return { valid: false, reason: 'Koordinat pada cap geotag tidak valid.' };
+                }
+
+                return {
+                    valid: true,
+                    latitude,
+                    longitude,
+                    source: 'VISUAL_GEOTAG',
+                    proof: 'GPS_MAP_CAMERA_STAMP'
+                };
+            } catch (error) {
+                return { valid: false, reason: 'Tulisan geotag pada foto tidak dapat diperiksa.' };
+            } finally {
+                if (source && typeof source.close === 'function') source.close();
+            }
+        };
+
+        const requiredPhotoInputs = Array.from(document.querySelectorAll('#sec-5 input[type="file"][required]'));
+        let photoSelectionSequence = 0;
+        requiredPhotoInputs.forEach(input => {
+            getPhotoStatusElement(input);
+            input.addEventListener('change', async () => {
+                const token = String(++photoSelectionSequence);
+                input.dataset.photoToken = token;
+                photoGeotagState.delete(input);
+                photoFileState.delete(input);
+                input.dataset.geotagValid = 'false';
+                input.dataset.photoCached = 'false';
+                input.dataset.cachedFileName = '';
+
+                // HANYA titik ini yang boleh menyentuh input.files.
+                const originalFile = input.files && input.files.length ? input.files[0] : null;
+                if (!originalFile) {
+                    setPhotoGeotagStatus(input, 'empty', isGeotagRequired(input)
+                        ? '<i class="ph-bold ph-map-pin"></i> Wajib geotag: GPS/EXIF atau cap GPS Map Camera dengan Lat/Long.'
+                        : '<i class="ph-bold ph-image"></i> Foto biasa diperbolehkan; geotag tidak diwajibkan.');
+                    return;
+                }
+
+                const fileName = originalFile.name || 'foto.jpg';
+                const isImage = /^image\//i.test(originalFile.type || '') || /\.(jpe?g|png|webp)$/i.test(fileName);
+                if (!isImage) {
+                    input.value = '';
+                    setPhotoGeotagStatus(input, 'invalid', '<i class="ph-bold ph-x-circle"></i> Foto ditolak: file harus berupa gambar.');
+                    showValidationToast(0, 'File yang dipilih harus berupa gambar.');
+                    return;
+                }
+
+                setPhotoGeotagStatus(input, 'checking', `<i class="ph-bold ph-spinner animate-spin"></i> Menyalin ${fileName} ke memori aplikasi...`);
+                let prepared;
+                try {
+                    prepared = await snapshotSelectedPhoto(originalFile);
+                } catch (error) {
+                    if (input.dataset.photoToken !== token) return;
+                    input.value = '';
+                    photoFileState.delete(input);
+                    setPhotoGeotagStatus(input, 'invalid', '<i class="ph-bold ph-x-circle"></i> Foto tidak dapat dibaca oleh browser. Pilih ulang langsung dari Galeri/File perangkat.');
+                    showValidationToast(0, 'Akses foto terputus saat pertama dibaca. Pilih ulang foto langsung dari Galeri/File perangkat.');
+                    return;
+                }
+                if (input.dataset.photoToken !== token) return;
+
+                // Mulai titik ini, reference file picker DILEPAS. Ringkasan dan pengiriman hanya memakai
+                // snapshot plain string di WeakMap; tidak ada FileReader/File/Blob yang dibaca ulang.
+                const snapshot = prepared.snapshot;
+                const workingBlob = prepared.workingBlob;
+                photoFileState.set(input, snapshot);
+                input.dataset.photoCached = 'true';
+                input.dataset.cachedFileName = snapshot.name;
+                input.value = '';
+
+                // KK tidak wajib geotag.
+                if (!isGeotagRequired(input)) {
+                    input.dataset.geotagValid = 'not-required';
+                    setPhotoGeotagStatus(input, 'valid', `<i class="ph-bold ph-check-circle"></i> Foto KK tersimpan aman ✓ &nbsp; ${snapshot.name} · Geotag tidak diwajibkan.`);
+                    return;
+                }
+
+                setPhotoGeotagStatus(input, 'checking', `<i class="ph-bold ph-spinner animate-spin"></i> ${snapshot.name} tersimpan. Memeriksa GPS/EXIF...`);
+                let geo = await readExifGps(workingBlob);
+                if (input.dataset.photoToken !== token) return;
+
+                if (!geo.valid) {
+                    setPhotoGeotagStatus(input, 'checking', `<i class="ph-bold ph-spinner animate-spin"></i> EXIF tidak ada. Memeriksa cap GPS Map Camera dan Lat/Long...`);
+                    geo = await readVisualGeotag(workingBlob);
+                }
+                if (input.dataset.photoToken !== token) return;
+
+                if (!geo.valid) {
+                    photoGeotagState.delete(input);
+                    photoFileState.delete(input);
+                    input.dataset.photoCached = 'false';
+                    input.dataset.cachedFileName = '';
+                    setPhotoGeotagStatus(
+                        input,
+                        'invalid',
+                        `<i class="ph-bold ph-x-circle"></i> Foto ditolak: ${geo.reason} Gunakan foto asli dari aplikasi GPS Map Camera dengan cap lokasi dan Lat/Long terlihat jelas.`
+                    );
+                    showValidationToast(0, 'Foto kondisi rumah wajib memakai geotag. File yang tidak lolos tidak dikirim.');
+                    return;
+                }
+
+                photoGeotagState.set(input, geo);
+                const sourceLabel = geo.source === 'EXIF_GPS' ? 'GPS/EXIF' : 'Cap GPS Map Camera';
+                setPhotoGeotagStatus(
+                    input,
+                    'valid',
+                    `<i class="ph-bold ph-check-circle"></i> Foto tersimpan aman ✓ &nbsp; ${snapshot.name}<br><span class="inline-flex mt-1"><i class="ph-bold ph-map-pin mr-1"></i> Geotag ${sourceLabel} · ${geo.latitude.toFixed(6)}, ${geo.longitude.toFixed(6)}</span>`
+                );
+            });
         });
 
-        const extractValuesAsync = async (container) => {
+        // --- Kamera Bawaan Aplikasi dengan Auto Geotag ---
+        // Mengambil foto langsung dari kamera perangkat lalu menyematkan Lat/Long secara visual
+        // ke dalam gambar (seperti aplikasi GPS Map Camera), sehingga pengguna tidak perlu
+        // memasang aplikasi geotag pihak ketiga. Koordinat diambil langsung dari GPS perangkat
+        // pada saat foto diambil (sumber yang sama dipercaya seperti tombol "Ambil Koordinat GPS").
+        const cameraModal = document.getElementById('camera-modal');
+        const cameraVideo = document.getElementById('camera-video');
+        const cameraCanvas = document.getElementById('camera-canvas');
+        const cameraGeoStatus = document.getElementById('camera-geo-status');
+        const cameraErrorBox = document.getElementById('camera-error');
+        const cameraModalTitle = document.getElementById('camera-modal-title');
+        const btnCameraShutter = document.getElementById('btn-camera-shutter');
+        const btnCameraRetake = document.getElementById('btn-camera-retake');
+        const btnCameraUse = document.getElementById('btn-camera-use');
+        const btnCameraClose = document.getElementById('btn-camera-close');
+
+        let cameraStream = null;
+        let cameraTargetInput = null;
+        let cameraCapturedGeo = null;
+        let cameraWatchId = null;
+
+        const stopCameraStream = () => {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            if (cameraWatchId !== null && navigator.geolocation) {
+                navigator.geolocation.clearWatch(cameraWatchId);
+                cameraWatchId = null;
+            }
+        };
+
+        const hideCameraError = () => {
+            cameraErrorBox.classList.add('hidden');
+            cameraErrorBox.classList.remove('flex');
+            cameraErrorBox.innerHTML = '';
+        };
+
+        const showCameraError = (message, disableShutter = true) => {
+            cameraErrorBox.innerHTML = message;
+            cameraErrorBox.classList.remove('hidden');
+            cameraErrorBox.classList.add('flex');
+            if (disableShutter) btnCameraShutter.disabled = true;
+        };
+
+        const resetCameraModalView = () => {
+            cameraVideo.classList.remove('hidden');
+            cameraCanvas.classList.add('hidden');
+            btnCameraShutter.classList.remove('hidden');
+            btnCameraRetake.classList.add('hidden');
+            btnCameraUse.classList.add('hidden');
+        };
+
+        const closeCameraModal = () => {
+            stopCameraStream();
+            cameraModal.classList.add('hidden');
+            cameraModal.classList.remove('flex');
+            resetCameraModalView();
+            hideCameraError();
+            cameraVideo.srcObject = null;
+            cameraTargetInput = null;
+            cameraCapturedGeo = null;
+        };
+
+        const startCameraLocationWatch = (input) => {
+            if (!navigator.geolocation) {
+                cameraGeoStatus.textContent = 'GPS tidak didukung perangkat/browser ini.';
+                if (isGeotagRequired(input) && !cameraCapturedGeo) btnCameraShutter.disabled = true;
+                return;
+            }
+            cameraGeoStatus.textContent = cameraCapturedGeo
+                ? `GPS aktif · ${cameraCapturedGeo.lat.toFixed(6)}, ${cameraCapturedGeo.lon.toFixed(6)}`
+                : 'Mencari sinyal GPS...';
+            cameraWatchId = navigator.geolocation.watchPosition(pos => {
+                cameraCapturedGeo = { lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy };
+                cameraGeoStatus.textContent = `GPS aktif · ${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)} (±${Math.round(pos.coords.accuracy || 0)}m)`;
+                if (!cameraErrorBox.classList.contains('flex')) btnCameraShutter.disabled = false;
+            }, () => {
+                if (!cameraCapturedGeo) {
+                    cameraGeoStatus.textContent = 'GPS tidak dapat diakses. Aktifkan lokasi perangkat lalu coba lagi.';
+                    if (isGeotagRequired(input)) btnCameraShutter.disabled = true;
+                }
+            }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
+        };
+
+        const openCameraModal = async (input) => {
+            if (!input) return;
+            cameraTargetInput = input;
+            cameraCapturedGeo = (currentGeo.lat !== null && currentGeo.lon !== null)
+                ? { lat: currentGeo.lat, lon: currentGeo.lon, accuracy: null }
+                : null;
+            cameraModalTitle.textContent = getPhotoLabel(input);
+            hideCameraError();
+            resetCameraModalView();
+            cameraModal.classList.remove('hidden');
+            cameraModal.classList.add('flex');
+            btnCameraShutter.disabled = isGeotagRequired(input) && !cameraCapturedGeo;
+
+            if (isGeotagRequired(input)) {
+                startCameraLocationWatch(input);
+            } else {
+                cameraGeoStatus.textContent = 'Geotag tidak diwajibkan untuk foto ini.';
+            }
+
+            if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+                showCameraError('<i class="ph-bold ph-video-camera-slash text-3xl block"></i>Kamera browser tidak tersedia di perangkat ini. Pastikan diakses lewat HTTPS, atau gunakan tombol "Pilih File" untuk mengambil foto dari Galeri/aplikasi GPS Map Camera.', false);
+                btnCameraShutter.disabled = true;
+                return;
+            }
+
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' } },
+                    audio: false
+                });
+                cameraVideo.srcObject = cameraStream;
+            } catch (error) {
+                showCameraError('<i class="ph-bold ph-video-camera-slash text-3xl block"></i>Kamera tidak dapat diakses. Berikan izin kamera pada browser lalu coba lagi, atau gunakan tombol "Pilih File" untuk mengambil dari Galeri.', false);
+                btnCameraShutter.disabled = true;
+            }
+        };
+
+        const drawGeotagStamp = (ctx, width, height, geo, label) => {
+            const barHeight = Math.max(80, Math.round(height * 0.14));
+            const y0 = height - barHeight;
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(0, y0, width, barHeight);
+
+            const baseFont = Math.max(18, Math.round(width / 30));
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+
+            ctx.font = `bold ${baseFont}px monospace`;
+            ctx.fillText('GPS Map Camera', 18, y0 + baseFont * 1.15);
+
+            ctx.font = `${Math.round(baseFont * 0.82)}px monospace`;
+            const coordText = geo
+                ? `Lat: ${geo.lat.toFixed(6)}  Long: ${geo.lon.toFixed(6)}`
+                : 'Lat: -  Long: -';
+            ctx.fillText(coordText, 18, y0 + baseFont * 2.35);
+
+            const now = new Date();
+            const dateText = now.toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            ctx.font = `${Math.round(baseFont * 0.7)}px monospace`;
+            ctx.fillText(`${dateText}  ·  ${label || ''}`, 18, y0 + baseFont * 3.35);
+        };
+
+        btnCameraShutter.addEventListener('click', () => {
+            if (!cameraVideo.videoWidth) return;
+            const width = cameraVideo.videoWidth;
+            const height = cameraVideo.videoHeight;
+            cameraCanvas.width = width;
+            cameraCanvas.height = height;
+            const ctx = cameraCanvas.getContext('2d');
+            ctx.drawImage(cameraVideo, 0, 0, width, height);
+            drawGeotagStamp(ctx, width, height, cameraCapturedGeo, getPhotoLabel(cameraTargetInput));
+
+            cameraVideo.classList.add('hidden');
+            cameraCanvas.classList.remove('hidden');
+            btnCameraShutter.classList.add('hidden');
+            btnCameraRetake.classList.remove('hidden');
+            btnCameraUse.classList.remove('hidden');
+        });
+
+        btnCameraRetake.addEventListener('click', () => {
+            hideCameraError();
+            resetCameraModalView();
+        });
+
+        btnCameraClose.addEventListener('click', closeCameraModal);
+
+        btnCameraUse.addEventListener('click', () => {
+            const input = cameraTargetInput;
+            if (!input) return;
+            const requireGeotag = isGeotagRequired(input);
+            if (requireGeotag && !cameraCapturedGeo) {
+                showCameraError('Koordinat GPS belum tersedia. Aktifkan lokasi lalu ambil ulang foto.');
+                return;
+            }
+
+            cameraCanvas.toBlob(async (blob) => {
+                if (!blob) {
+                    showCameraError('Gagal memproses foto dari kamera. Silakan coba lagi.');
+                    return;
+                }
+                const fileName = `${(input.name || 'foto')}-kamera-${Date.now()}.jpg`;
+                const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+                const token = String(++photoSelectionSequence);
+                input.dataset.photoToken = token;
+                photoGeotagState.delete(input);
+                photoFileState.delete(input);
+                input.dataset.geotagValid = 'false';
+                input.dataset.photoCached = 'false';
+                input.dataset.cachedFileName = '';
+
+                let prepared;
+                try {
+                    prepared = await snapshotSelectedPhoto(file);
+                } catch (error) {
+                    showCameraError('Gagal menyimpan foto dari kamera. Silakan coba lagi.');
+                    return;
+                }
+                if (input.dataset.photoToken !== token) return;
+
+                photoFileState.set(input, prepared.snapshot);
+                input.dataset.photoCached = 'true';
+                input.dataset.cachedFileName = prepared.snapshot.name;
+                input.value = '';
+
+                if (requireGeotag) {
+                    const geo = {
+                        valid: true,
+                        latitude: cameraCapturedGeo.lat,
+                        longitude: cameraCapturedGeo.lon,
+                        source: 'IN_APP_CAMERA',
+                        proof: 'IN_APP_CAMERA_GPS'
+                    };
+                    photoGeotagState.set(input, geo);
+                    input.dataset.geotagValid = 'true';
+                    setPhotoGeotagStatus(
+                        input,
+                        'valid',
+                        `<i class="ph-bold ph-check-circle"></i> Foto kamera tersimpan aman ✓ &nbsp; ${prepared.snapshot.name}<br><span class="inline-flex mt-1"><i class="ph-bold ph-map-pin mr-1"></i> Geotag Kamera Aplikasi · ${geo.latitude.toFixed(6)}, ${geo.longitude.toFixed(6)}</span>`
+                    );
+                } else {
+                    input.dataset.geotagValid = 'not-required';
+                    setPhotoGeotagStatus(input, 'valid', `<i class="ph-bold ph-check-circle"></i> Foto kamera tersimpan aman ✓ &nbsp; ${prepared.snapshot.name} · Geotag tidak diwajibkan.`);
+                }
+
+                closeCameraModal();
+            }, 'image/jpeg', 0.9);
+        });
+
+        document.querySelectorAll('.camera-capture-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetInput = document.getElementById(btn.dataset.targetInput);
+                openCameraModal(targetInput);
+            });
+        });
+
+        const fileToPayload = (snapshot, geotag, requireGeotag = false) => {
+            if (!snapshot) return null;
+            if (requireGeotag && (!geotag || geotag.valid !== true)) {
+                throw new Error('Foto kondisi rumah tanpa geotag tidak boleh dikirim.');
+            }
+            const payload = {
+                name: snapshot.name,
+                type: snapshot.type,
+                size: snapshot.size,
+                data: snapshot.dataUrl
+            };
+            if (requireGeotag) {
+                payload.geotag = {
+                    valid: true,
+                    latitude: geotag.latitude,
+                    longitude: geotag.longitude,
+                    source: geotag.source,
+                    proof: geotag.proof || null
+                };
+            } else {
+                payload.geotag = { required: false, source: 'NOT_REQUIRED' };
+            }
+            return payload;
+        };
+
+        const extractValuesCached = (container) => {
             const data = extractValues(container);
             const fileInputs = Array.from(container.querySelectorAll('input[type="file"][name]'));
-            for (const input of fileInputs) data[input.name] = await fileToPayload(input.files[0] || null);
+            for (const input of fileInputs) {
+                const requireGeotag = isGeotagRequired(input);
+                const geotag = photoGeotagState.get(input);
+                const snapshot = photoFileState.get(input);
+
+                // PENTING: jangan akses input.files lagi di tahap ringkasan/kirim.
+                // Android/Brave dapat mencabut izin content URI setelah picker ditutup walaupun nama file masih tampil.
+                if (!snapshot || input.dataset.photoCached !== 'true') {
+                    data[input.name] = null;
+                    throw new Error(`${getPhotoLabel(input)} belum tersimpan aman. Pilih ulang foto tersebut satu kali.`);
+                }
+                if (requireGeotag && (!geotag || geotag.valid !== true)) {
+                    throw new Error(`${getPhotoLabel(input)} belum memiliki geotag yang valid.`);
+                }
+                data[input.name] = fileToPayload(snapshot, geotag, requireGeotag);
+            }
             return data;
         };
 
@@ -1077,10 +1841,10 @@
         const validationToastDetail = document.getElementById('validation-toast-detail');
         let validationToastTimer = null;
 
-        const showValidationToast = (count) => {
-            validationToastDetail.textContent = count
+        const showValidationToast = (count, customMessage = '') => {
+            validationToastDetail.textContent = customMessage || (count
                 ? `Masih ada ${count} bagian yang belum lengkap. Lengkapi semua pertanyaan sebelum melanjutkan.`
-                : 'Lengkapi semua pertanyaan sebelum melanjutkan.';
+                : 'Lengkapi semua pertanyaan sebelum melanjutkan.');
             validationToast.classList.remove('hidden');
             clearTimeout(validationToastTimer);
             validationToastTimer = setTimeout(() => validationToast.classList.add('hidden'), 5000);
@@ -1127,7 +1891,12 @@
                 const type = (el.type || '').toLowerCase();
                 if (type === 'checkbox' || el.name === 'jumlah') return; // ditangani khusus di bawah
                 if (type === 'file') {
-                    if (!el.files || !el.files.length) addError(el);
+                    // Setelah event change, validasi HANYA salinan memori. Jangan baca input.files lagi.
+                    if (el.dataset.photoCached !== 'true' || !photoFileState.get(el)) {
+                        addError(el);
+                    } else if (isGeotagRequired(el) && (el.dataset.geotagValid !== 'true' || !photoGeotagState.get(el)?.valid)) {
+                        addError(el);
+                    }
                     return;
                 }
                 if ((el.value ?? '').toString().trim() === '') addError(el);
@@ -1178,7 +1947,7 @@
             if (e.target.matches('input, select, textarea')) e.target.classList.remove('validation-invalid');
         });
         document.addEventListener('change', (e) => {
-            if (e.target.matches('input, select, textarea')) e.target.classList.remove('validation-invalid');
+            if (e.target.matches('input, select, textarea') && e.target.type !== 'file') e.target.classList.remove('validation-invalid');
             if (e.target.matches('input[name="usulan_bansos"]')) {
                 const all = Array.from(document.querySelectorAll('input[name="usulan_bansos"]'));
                 const none = all.find(cb => cb.value === 'TIDAK ADA');
@@ -1201,7 +1970,16 @@
                 if (v === true) return 'Ya';
                 if (v === false) return 'Tidak';
                 if (Array.isArray(v)) return v.length ? v.join(', ') : '<span class="text-slate-300">-</span>';
-                if (typeof v === 'object' && v.name) return v.name;
+                if (typeof v === 'object' && v.name) {
+                    if (v.geotag?.valid) {
+                        const geoLabel = v.geotag.source === 'VISUAL_GEOTAG' ? 'Cap GPS Map Camera' : 'GPS/EXIF';
+                        return `${v.name}<br><span class="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-green-700"><i class="ph-bold ph-map-pin"></i> Geotag ✓ ${geoLabel} · ${Number(v.geotag.latitude).toFixed(6)}, ${Number(v.geotag.longitude).toFixed(6)}</span>`;
+                    }
+                    if (v.geotag?.required === false) {
+                        return `${v.name}<br><span class="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-slate-500"><i class="ph-bold ph-image"></i> Geotag tidak diwajibkan</span>`;
+                    }
+                    return v.name;
+                }
                 return v;
             };
 
@@ -1246,24 +2024,31 @@
         const btnOpenSummary = document.getElementById('btn-open-summary');
         
         // --- Open Summary ---
-        btnOpenSummary.addEventListener('click', async () => {
+        btnOpenSummary.addEventListener('click', () => {
             if (!validateAllData()) return;
-            finalPayload = {
-                keluarga: { ...extractValues(document.getElementById('sec-1')), latitude: currentGeo.lat, longitude: currentGeo.lon },
-                sosial_ekonomi: extractValues(document.getElementById('sec-2')),
-                aset_keluarga: Array.from(document.querySelectorAll('.asset-row')).map(row => ({
-                    jenis_aset: row.dataset.aset,
-                    ...extractValues(row)
-                })),
-                anggota_keluarga: Array.from(document.querySelectorAll('.member-card')).map(card => ({
-                    urutan_anggota: card.dataset.urutan,
-                    ...extractValues(card)
-                })),
-                dokumen: await extractValuesAsync(document.getElementById('sec-5'))
-            };
-            
-            document.getElementById('summary-content').innerHTML = generateSummaryHTML(finalPayload);
-            summaryModal.classList.remove('hidden');
+            try {
+                finalPayload = {
+                    keluarga: { ...extractValues(document.getElementById('sec-1')), latitude: currentGeo.lat, longitude: currentGeo.lon },
+                    sosial_ekonomi: extractValues(document.getElementById('sec-2')),
+                    aset_keluarga: Array.from(document.querySelectorAll('.asset-row')).map(row => ({
+                        jenis_aset: row.dataset.aset,
+                        ...extractValues(row)
+                    })),
+                    anggota_keluarga: Array.from(document.querySelectorAll('.member-card')).map(card => ({
+                        urutan_anggota: card.dataset.urutan,
+                        ...extractValues(card)
+                    })),
+                    dokumen: extractValuesCached(document.getElementById('sec-5'))
+                };
+                
+                document.getElementById('summary-content').innerHTML = generateSummaryHTML(finalPayload);
+                summaryModal.classList.remove('hidden');
+            } catch (error) {
+                const msg = error?.name === 'NotReadableError'
+                    ? 'Browser kehilangan akses ke file asli. Foto harus dipilih ulang sekali; setelah status hijau muncul, sistem memakai salinan memori.'
+                    : (error.message || 'Foto geotag belum valid.');
+                showValidationToast(0, msg);
+            }
         });
 
         // --- Close Summary ---
@@ -1282,17 +2067,29 @@
             btnConfirm.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> Memproses...';
             btnConfirm.disabled = true;
 
+            let submitPhase = 'menyiapkan data';
             try {
-                // Fetch logic (tetap menggunakan target URL bawaan)
+                // Bangun ulang dokumen dari CACHE MEMORI. Tidak menyentuh input.files.
+                finalPayload.dokumen = extractValuesCached(document.getElementById('sec-5'));
+
+                submitPhase = 'membuat payload';
+                const requestBody = JSON.stringify(finalPayload);
+                if (!requestBody || requestBody.length < 100) {
+                    throw new Error('Payload kosong atau tidak valid.');
+                }
+
+                submitPhase = 'mengirim ke server';
                 const res = await fetch('https://script.google.com/macros/s/AKfycbwMly_eKkNBxA8B-P_RAjew3Nw_d-Nfat0FxEc4UWbCHoZcNyJg25rR0aNwAQ5qdm6G/exec', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' }, 
-                    body: JSON.stringify(finalPayload)
+                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                    body: requestBody
                 });
-                
+
+                submitPhase = 'membaca respons server';
+                const responseText = await res.text();
                 let responseData;
                 try {
-                    responseData = await res.json();
+                    responseData = JSON.parse(responseText);
                 } catch (parseError) {
                     throw new Error('Respons server tidak valid. Pastikan deployment Google Apps Script sudah diperbarui.');
                 }
@@ -1316,11 +2113,20 @@
                     document.querySelector('main').scrollTo({ top: 0, behavior: 'smooth' });
                 }, 1000);
             } catch (err) {
-                alert("Gagal mengirim data: " + err.message);
+                const detail = err && err.message ? err.message : String(err);
+                alert(`Gagal pada tahap ${submitPhase}: ${detail}`);
                 btnConfirm.innerHTML = originalHTML;
                 btnConfirm.disabled = false;
             }
         });
     </script>
+
+
+<script>
+// FIX v5: input file dilepas segera setelah bytes tersalin; Ringkasan/Kirim memakai plain data URL saja.
+// Pengiriman dilakukan hanya melalui tombol Ringkasan -> Kirim Data Final dengan cache foto di memori.
+</script>
+
+
 </body>
 </html>
