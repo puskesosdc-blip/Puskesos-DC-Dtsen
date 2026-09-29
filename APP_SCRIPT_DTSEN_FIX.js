@@ -2,6 +2,14 @@ const DRIVE_FOLDER_ID = '1V5VamlpoX4qMNc5fXiRXQz2Gcz5swWUd';
 
 const SHEET_NAME = 'DTSEN';
 
+// Konstanta 4 foto yang dipakai di seluruh validasi dan penyimpanan
+const PHOTO_FIELDS = [
+  { key: 'foto_kk', label: 'Foto KK', geotagRequired: false },
+  { key: 'foto_rumah_depan', label: 'Foto Rumah Depan', geotagRequired: true },
+  { key: 'foto_rumah_dalam', label: 'Foto Rumah Dalam', geotagRequired: true },
+  { key: 'foto_toilet_wc', label: 'Foto Toilet WC', geotagRequired: true }
+];
+
 function setupDTSEN() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let main = ss.getSheetByName(SHEET_NAME);
@@ -43,10 +51,8 @@ function setupDTSEN() {
   }
 
   main.setFrozenRows(1);
-
   SpreadsheetApp.flush();
 }
-
 
 function doGet() {
   return jsonResponse({
@@ -55,29 +61,23 @@ function doGet() {
   });
 }
 
-
-
 // =====================================================
 // VALIDASI FOTO WAJIB
 // =====================================================
 
 function validateRequiredImages(dokumen) {
+  if (!dokumen || typeof dokumen !== 'object') {
+    throw new Error('Data dokumen foto tidak ditemukan.');
+  }
 
-  const requiredImages = [
-    { key: 'foto_kk', label: 'Foto KK', geotagRequired: false },
-    { key: 'foto_rumah_depan', label: 'Foto Rumah Depan', geotagRequired: true },
-    { key: 'foto_rumah_dalam', label: 'Foto Rumah Dalam', geotagRequired: true },
-    { key: 'foto_toilet_wc', label: 'Foto Toilet WC', geotagRequired: true }
-  ];
-
-  requiredImages.forEach(item => {
-
+  PHOTO_FIELDS.forEach(item => {
     const image = dokumen[item.key];
 
     if (
       !image ||
       !image.data ||
-      String(image.data).length < 50
+      typeof image.data !== 'string' ||
+      image.data.length < 50
     ) {
       throw new Error(
         item.label + ' wajib diupload sebelum dikirim.'
@@ -106,11 +106,8 @@ function validateRequiredImages(dokumen) {
         item.label + ' ditolak. Foto kondisi rumah wajib menggunakan geotag (GPS/EXIF atau cap GPS Map Camera dengan Lat/Long).'
       );
     }
-
   });
-
 }
-
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -132,1426 +129,398 @@ function doPost(e) {
       );
     }
 
-    const payload = JSON.parse(
-      e.postData.contents
-    );
-
-    const ss =
-      SpreadsheetApp.getActiveSpreadsheet();
-
-    let sheet =
-      ss.getSheetByName(SHEET_NAME);
-
-    if (!sheet) {
-      sheet = ss.insertSheet(
-        SHEET_NAME
-      );
+    let payload;
+    try {
+      payload = JSON.parse(e.postData.contents);
+    } catch (parseErr) {
+      throw new Error('Format payload JSON tidak valid.');
     }
 
-    const id =
-      Utilities.getUuid();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(SHEET_NAME);
 
-    const timestamp =
-      new Date();
+    if (!sheet) {
+      sheet = ss.insertSheet(SHEET_NAME);
+    }
 
-    const keluarga =
-      payload.keluarga || {};
+    const id = Utilities.getUuid();
+    const timestamp = new Date();
 
-    const sosek =
-      payload.sosial_ekonomi || {};
-
-    const aset =
-      payload.aset_keluarga || [];
-
-    const anggota =
-      payload.anggota_keluarga || [];
-
-    const dokumen =
-      payload.dokumen || {};
+    const keluarga = payload.keluarga || {};
+    const sosek = payload.sosial_ekonomi || {};
+    const aset = payload.aset_keluarga || [];
+    const anggota = payload.anggota_keluarga || [];
+    const dokumen = payload.dokumen || {};
 
     // FOTO WAJIB
     validateRequiredImages(dokumen);
 
-    const namaKepala =
-      cleanText(
-        keluarga.nama_kepala_keluarga
-      );
-
-    const nikKepala =
-      cleanText(
-        keluarga.nik_kepala_keluarga
-      );
+    const namaKepala = cleanText(keluarga.nama_kepala_keluarga);
+    const nikKepala = cleanText(keluarga.nik_kepala_keluarga);
 
     if (!namaKepala) {
-      throw new Error(
-        'Nama Kepala Keluarga tidak ditemukan.'
-      );
+      throw new Error('Nama Kepala Keluarga tidak ditemukan.');
     }
 
     if (!nikKepala) {
-      throw new Error(
-        'NIK Kepala Keluarga tidak ditemukan.'
-      );
+      throw new Error('NIK Kepala Keluarga tidak ditemukan.');
     }
 
-
-    // =====================================================
-    // VALIDASI NIK KEPALA KELUARGA
-    // 1 NIK = 1 KELUARGA
-    // =====================================================
-
-    validateNIKKepalaDuplikat(
-      sheet,
-      nikKepala
-    );
-
-    validateNikFormat(
-      nikKepala
-    );
-
-
-    // =====================================================
-    // SATU OBJECT = SATU BARIS KELUARGA
-    // =====================================================
+    // VALIDASI FORMAT NIK (16 DIGIT)
+    validateNikFormat(nikKepala);
 
     const rowData = {
       'ID Data': id,
       'Timestamp': timestamp
     };
 
-
-    // =====================================================
     // DATA KELUARGA
-    // =====================================================
+    Object.keys(keluarga).forEach(key => {
+      rowData[formatHeader(key)] = normalizeValue(keluarga[key]);
+    });
 
-    Object.keys(keluarga)
-      .forEach(key => {
-
-        rowData[
-          formatHeader(key)
-        ] =
-          normalizeValue(
-            keluarga[key]
-          );
-
-      });
-
-
-    // =====================================================
     // SOSIAL EKONOMI
-    // =====================================================
+    Object.keys(sosek).forEach(key => {
+      rowData['SosEk - ' + formatHeader(key)] = normalizeValue(sosek[key]);
+    });
 
-    Object.keys(sosek)
-      .forEach(key => {
-
-        rowData[
-          'SosEk - ' +
-          formatHeader(key)
-        ] =
-          normalizeValue(
-            sosek[key]
-          );
-
-      });
-
-
-    // =====================================================
     // DAFTAR ASET
-    // =====================================================
-
     const assetConfig = {
-
-      tabung_gas_3kg:
-        '1. Tabung Gas 3 KG',
-
-      tabung_gas_55kg_atau_lebih:
-        '2. Tabung Gas 5,5 KG atau Lebih',
-
-      televisi:
-        '3. Televisi Layar Datar',
-
-      kulkas:
-        '4. Lemari Es / Kulkas',
-
-      ac:
-        '5. AC (Air Conditioner)',
-
-      komputer_laptop:
-        '6. Komputer / Laptop / Tablet',
-
-      sepeda:
-        '7. Sepeda',
-
-      motor:
-        '8. Sepeda Motor',
-
-      mobil:
-        '9. Mobil',
-
-      telepon_rumah_pstn:
-        '10. Telepon Rumah (PSTN)',
-
-      emas:
-        '11. Emas',
-
-      kapal_perahu_motor:
-        '12. Kapal / Perahu Motor',
-
-      pemanas_air:
-        '13. Pemanas Air (Water Heater)',
-
-      perahu:
-        '14. Perahu',
-
-      smartphone:
-        '15. Smartphone',
-
-      rumah_lahan_lainnya:
-        '16. Rumah / Lahan Lainnya'
-
+      tabung_gas_3kg: '1. Tabung Gas 3 KG',
+      tabung_gas_55kg_atau_lebih: '2. Tabung Gas 5,5 KG atau Lebih',
+      televisi: '3. Televisi Layar Datar',
+      kulkas: '4. Lemari Es / Kulkas',
+      ac: '5. AC (Air Conditioner)',
+      komputer_laptop: '6. Komputer / Laptop / Tablet',
+      sepeda: '7. Sepeda',
+      motor: '8. Sepeda Motor',
+      mobil: '9. Mobil',
+      telepon_rumah_pstn: '10. Telepon Rumah (PSTN)',
+      emas: '11. Emas',
+      kapal_perahu_motor: '12. Kapal / Perahu Motor',
+      pemanas_air: '13. Pemanas Air (Water Heater)',
+      perahu: '14. Perahu',
+      smartphone: '15. Smartphone',
+      rumah_lahan_lainnya: '16. Rumah / Lahan Lainnya'
     };
 
-
-    // =====================================================
-    // DATA ASET
-    // =====================================================
-
     aset.forEach(item => {
-
-      if (
-        !item ||
-        !item.jenis_aset
-      ) {
-        return;
-      }
-
-      const label =
-        assetConfig[
-          item.jenis_aset
-        ] ||
-        formatHeader(
-          item.jenis_aset
-        );
-
-      const punya =
-        isTrue(
-          item.kepemilikan
-        );
-
-      rowData[
-        'Aset - ' + label
-      ] =
-        punya
-          ? 'YA'
-          : 'TIDAK';
+      if (!item || !item.jenis_aset) return;
+      const label = assetConfig[item.jenis_aset] || formatHeader(item.jenis_aset);
+      const punya = isTrue(item.kepemilikan);
+      rowData['Aset - ' + label] = punya ? 'YA' : 'TIDAK';
 
       if (
         item.jumlah !== undefined &&
         item.jumlah !== null &&
         item.jumlah !== ''
       ) {
-
-        rowData[
-          'Jumlah - ' + label
-        ] =
-          normalizeValue(
-            item.jumlah
-          );
-
+        rowData['Jumlah - ' + label] = normalizeValue(item.jumlah);
       }
-
     });
 
-
-    // =====================================================
     // ANGGOTA KELUARGA
-    // =====================================================
-
-    anggota.forEach(
-      (person, index) => {
-
-        const nomor =
-          index + 1;
-
-        Object.keys(
-          person || {}
-        )
-          .forEach(key => {
-
-            if (
-              key ===
-              'urutan_anggota'
-            ) {
-              return;
-            }
-
-            rowData[
-              'Anggota ' +
-              nomor +
-              ' - ' +
-              formatHeader(key)
-            ] =
-              normalizeValue(
-                person[key]
-              );
-
-          });
-
-      }
-    );
-
-
-    // =====================================================
-    // DOKUMEN NON FOTO
-    // =====================================================
-
-    Object.keys(dokumen)
-      .forEach(key => {
-
-        if (
-          isImageKey(key)
-        ) {
-          return;
-        }
-
-        rowData[
-          'Dokumen - ' +
-          formatHeader(key)
-        ] =
-          normalizeValue(
-            dokumen[key]
-          );
-
+    anggota.forEach((person, index) => {
+      const nomor = index + 1;
+      Object.keys(person || {}).forEach(key => {
+        if (key === 'urutan_anggota') return;
+        rowData['Anggota ' + nomor + ' - ' + formatHeader(key)] = normalizeValue(person[key]);
       });
-
-
-    // =====================================================
-    // FOTO
-    // TIDAK MENGGUNAKAN GOOGLE DRIVE
-    // =====================================================
-
-    const imageFields = [
-
-      {
-        key: 'foto_kk',
-        label: 'Foto KK'
-      },
-
-      {
-        key: 'foto_rumah_depan',
-        label: 'Foto Rumah Depan'
-      },
-
-      {
-        key: 'foto_rumah_dalam',
-        label: 'Foto Rumah Dalam'
-      },
-
-      {
-        key: 'foto_toilet_wc',
-        label: 'Foto Toilet WC'
-      }
-
-    ];
-
-
-    const cellImages = {};
-
-
-    imageFields.forEach(config => {
-
-      const fileData =
-        dokumen[
-          config.key
-        ];
-
-      if (
-        !fileData ||
-        !fileData.data
-      ) {
-        throw new Error(
-          config.label + ' wajib diupload.'
-        );
-      }
-
-      const prepared =
-        saveImageToDrive(
-          fileData,
-          namaKepala,
-          nikKepala,
-          config.label
-        );
-
-      rowData[
-        config.label +
-        ' - Nama File'
-      ] =
-        prepared.fileName;
-
-      rowData[
-        config.label +
-        ' - Link Drive'
-      ] =
-        prepared.url;
-
-      // Kolom preview disiapkan dari awal
-      rowData[
-        config.label +
-        ' - Preview'
-      ] = '';
-
-      cellImages[
-        config.label
-      ] = null;
-
     });
 
+    // DOKUMEN NON FOTO
+    Object.keys(dokumen).forEach(key => {
+      if (isImageKey(key)) return;
+      rowData['Dokumen - ' + formatHeader(key)] = normalizeValue(dokumen[key]);
+    });
 
-    // =====================================================
+    // FOTO DISIMPAN KE GOOGLE DRIVE
+    PHOTO_FIELDS.forEach(config => {
+      const fileData = dokumen[config.key];
+      if (!fileData || !fileData.data) {
+        throw new Error(config.label + ' wajib diupload.');
+      }
+
+      const prepared = saveImageToDrive(
+        fileData,
+        namaKepala,
+        nikKepala,
+        config.label
+      );
+
+      rowData[config.label + ' - Nama File'] = prepared.fileName;
+      rowData[config.label + ' - Link Drive'] = prepared.url;
+    });
+
     // BUAT HEADER DINAMIS
-    // =====================================================
+    ensureDynamicHeaders(sheet, Object.keys(rowData));
+    const headers = getHeaders(sheet);
 
-    ensureDynamicHeaders(
-      sheet,
-      Object.keys(rowData)
-    );
-
-
-    const headers =
-      getHeaders(sheet);
-
-
-    // =====================================================
-    // UPSERT BERDASARKAN NIK KEPALA KELUARGA
-    // Jika NIK sudah ada -> update baris lama
-    // Jika NIK baru -> tambah baris baru
-    // =====================================================
-
+    // UPSERT BERDASARKAN NIK + NO KK KEPALA KELUARGA
     const existingRow = findRowByNikDanKK(
       sheet,
       nikKepala,
       keluarga.no_kk || keluarga.nokk || keluarga.nomor_kk
     );
 
-    const targetRow = existingRow ||
-      Math.max(
-        sheet.getLastRow() + 1,
-        2
-      );
+    const targetRow = existingRow || Math.max(sheet.getLastRow() + 1, 2);
 
-
-    // =====================================================
     // FORMAT NIK / KK / NOMOR SEBAGAI TEXT
-    // =====================================================
+    formatTextColumns(sheet);
 
-    formatTextColumns(
-      sheet
-    );
-
-
-    // =====================================================
     // BENTUK SATU BARIS
-    // =====================================================
+    const row = headers.map(header => {
+      if (Object.prototype.hasOwnProperty.call(rowData, header)) {
+        return rowData[header];
+      }
+      return '';
+    });
 
-    const row =
-      headers.map(header => {
-
-        if (
-          Object.prototype
-            .hasOwnProperty
-            .call(
-              rowData,
-              header
-            )
-        ) {
-          return rowData[
-            header
-          ];
-        }
-
-        return '';
-
-      });
-
-
-    // =====================================================
     // SIMPAN BARIS
-    // =====================================================
-
-    sheet
-      .getRange(
-        targetRow,
-        1,
-        1,
-        row.length
-      )
-      .setValues(
-        [row]
-      );
-
-
-    // =====================================================
-    // PREVIEW FOTO DI DALAM SEL
-    // =====================================================
-
-    insertCellImages(
-
-      sheet,
-
-      targetRow,
-
-      cellImages
-
-    );
-
-
-    if (
-      Object.keys(
-        cellImages
-      ).length > 0
-    ) {
-
-      sheet.setRowHeight(
-        targetRow,
-        110
-      );
-
-    }
-
-
+    sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
     SpreadsheetApp.flush();
 
-
-    // =====================================================
     // RESPONSE SUKSES
-    // =====================================================
-
     return jsonResponse({
-
       success: true,
-
       id: id,
-
-      nama_kepala_keluarga:
-        namaKepala,
-
-      nik_kepala_keluarga:
-        nikKepala
-
+      nama_kepala_keluarga: namaKepala,
+      nik_kepala_keluarga: nikKepala
     });
-
 
   } catch (error) {
-
-
     return jsonResponse({
-
       success: false,
-
-      error:
-        error &&
-        error.message
-
-          ? error.message
-
-          : String(error)
-
+      error: error && error.message ? error.message : String(error)
     });
-
-
   } finally {
-
-
     try {
-
       lock.releaseLock();
-
     } catch (ignore) {}
-
   }
 }
-
-
 
 // =========================================================
 // SIMPAN FOTO KE GOOGLE DRIVE
 // =========================================================
 
 function saveImageToDrive(fileData, nama, nik, label) {
+  if (!fileData || !fileData.data) {
+    throw new Error('Data foto ' + label + ' tidak ditemukan.');
+  }
+
+  const dataUrl = String(fileData.data);
+  if (!dataUrl.startsWith('data:image/')) {
+    throw new Error('Format foto ' + label + ' tidak valid (harus diawali "data:image/").');
+  }
+
+  const parts = dataUrl.split(',');
+  if (parts.length < 2 || !parts[1]) {
+    throw new Error('Data base64 foto ' + label + ' tidak valid atau kosong.');
+  }
+
+  const base64 = parts[1];
+  const mimeType = (dataUrl.match(/^data:([^;]+);base64,/) || [])[1] || fileData.type || 'image/jpeg';
+  const ext = mimeType === 'image/png' ? '.png' : (mimeType === 'image/webp' ? '.webp' : '.jpg');
 
   const root = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-
   const folderName = sanitizeFileName(nik + '_' + nama);
 
   let folders = root.getFoldersByName(folderName);
-
   const folder = folders.hasNext()
     ? folders.next()
     : root.createFolder(folderName);
 
-  const base64 = String(fileData.data).split(',')[1];
-
   const blob = Utilities.newBlob(
     Utilities.base64Decode(base64),
-    fileData.type || 'image/jpeg',
-    sanitizeFileName(nik + '_' + label + '_' + Date.now())
+    mimeType,
+    sanitizeFileName(nik + '_' + label + '_' + Date.now()) + ext
   );
 
   const file = folder.createFile(blob);
 
   return {
     fileName: file.getName(),
-    cellImage: null,
     url: file.getUrl()
   };
 }
 
 // =========================================================
-// SIAPKAN CELL IMAGE
-// =========================================================
-
-function prepareCellImage(
-  fileData,
-  nama,
-  nik,
-  label
-) {
-
-  const dataUrl =
-    String(
-      fileData.data || ''
-    );
-
-  if (!dataUrl) {
-
-    throw new Error(
-      'Data gambar tidak ditemukan: ' +
-      label
-    );
-
-  }
-
-  if (
-    dataUrl.indexOf(
-      'data:image/'
-    ) !== 0
-  ) {
-
-    throw new Error(
-      'Format gambar tidak valid: ' +
-      label
-    );
-
-  }
-
-  const mimeType =
-    fileData.type ||
-    (
-      dataUrl.match(
-        /^data:([^;]+);base64,/
-      ) || []
-    )[1] ||
-    'image/jpeg';
-
-  const extension =
-    getExtension(
-      fileData.name,
-      mimeType
-    );
-
-  const fileName =
-
-    sanitizeFileName(
-      nik
-    ) +
-
-    '_' +
-
-    sanitizeFileName(
-      nama
-    ) +
-
-    '_' +
-
-    sanitizeFileName(
-      label
-    ) +
-
-    '_' +
-
-    Date.now() +
-
-    extension;
-
-  const cellImage =
-    SpreadsheetApp
-      .newCellImage()
-      .setSourceUrl(
-        dataUrl
-      )
-      .setAltTextTitle(
-        label
-      )
-      .setAltTextDescription(
-        fileName
-      )
-      .build();
-
-  return {
-
-    fileName:
-      fileName,
-
-    cellImage:
-      cellImage
-
-  };
-
-}
-
-
-// =========================================================
-// TAMPILKAN FOTO DI DALAM SEL SPREADSHEET
-// =========================================================
-
-function insertCellImages(
-  sheet,
-  rowNumber,
-  cellImages
-) {
-
-  const headers =
-    getHeaders(
-      sheet
-    );
-
-  Object.keys(
-    cellImages
-  )
-    .forEach(label => {
-
-      const previewHeader =
-
-        label +
-        ' - Preview';
-
-      const colIndex =
-
-        headers.indexOf(
-          previewHeader
-        );
-
-      if (
-        colIndex === -1
-      ) {
-
-        return;
-
-      }
-
-      const cell =
-        sheet.getRange(
-          rowNumber,
-          colIndex + 1
-        );
-
-      try {
-
-        // Gambar menjadi nilai sel,
-        // bukan gambar mengambang di atas sel.
-        if (cellImages[label]) {
-          cell.setValue(
-            cellImages[label]
-          );
-        }
-
-        cell
-          .setHorizontalAlignment(
-            'center'
-          )
-          .setVerticalAlignment(
-            'middle'
-          );
-
-        sheet.setColumnWidth(
-          colIndex + 1,
-          140
-        );
-
-      } catch (error) {
-
-        cell.setValue(
-          'Gambar gagal dimuat: ' +
-          error.message
-        );
-
-      }
-
-    });
-
-  if (
-    Object.keys(
-      cellImages
-    ).length > 0
-  ) {
-
-    sheet.setRowHeight(
-      rowNumber,
-      110
-    );
-
-  }
-
-}
-
-
-// =========================================================
 // HEADER DINAMIS
 // =========================================================
 
-function ensureDynamicHeaders(
-  sheet,
-  requiredHeaders
-) {
-
-  let existing =
-    getHeaders(sheet);
-
+function ensureDynamicHeaders(sheet, requiredHeaders) {
+  let existing = getHeaders(sheet);
 
   // Jika masih placeholder setup
   if (
-
     sheet.getLastRow() <= 1 &&
-
     existing.length === 1 &&
-
-    existing[0] ===
-      'Data DTSEN akan otomatis masuk mulai baris berikutnya.'
-
+    existing[0] === 'Data DTSEN akan otomatis masuk mulai baris berikutnya.'
   ) {
-
     sheet.clear();
-
     existing = [];
-
   }
 
-
-  if (
-    existing.length === 0
-  ) {
-
-
-    sheet
-      .getRange(
-
-        1,
-
-        1,
-
-        1,
-
-        requiredHeaders.length
-
-      )
-      .setValues(
-
-        [requiredHeaders]
-
-      );
-
-
+  if (existing.length === 0) {
+    sheet.getRange(1, 1, 1, requiredHeaders.length).setValues([requiredHeaders]);
   } else {
-
-
-    const missing =
-      requiredHeaders.filter(
-
-        header =>
-          !existing.includes(
-            header
-          )
-
-      );
-
-
-    if (
-      missing.length
-    ) {
-
-
-      sheet
-        .getRange(
-
-          1,
-
-          existing.length + 1,
-
-          1,
-
-          missing.length
-
-        )
-        .setValues(
-
-          [missing]
-
-        );
-
+    const missing = requiredHeaders.filter(header => !existing.includes(header));
+    if (missing.length) {
+      sheet.getRange(1, existing.length + 1, 1, missing.length).setValues([missing]);
     }
-
   }
 
-
-  const totalColumns =
-    sheet.getLastColumn();
-
-
-  if (
-    totalColumns > 0
-  ) {
-
-
+  const totalColumns = sheet.getLastColumn();
+  if (totalColumns > 0) {
     sheet
-      .getRange(
-
-        1,
-
-        1,
-
-        1,
-
-        totalColumns
-
-      )
-      .setFontWeight(
-        'bold'
-      )
-      .setWrap(
-        true
-      )
-      .setVerticalAlignment(
-        'middle'
-      );
-
-
-    sheet.setFrozenRows(
-      1
-    );
-
+      .getRange(1, 1, 1, totalColumns)
+      .setFontWeight('bold')
+      .setWrap(true)
+      .setVerticalAlignment('middle');
+    sheet.setFrozenRows(1);
   }
-
 }
-
 
 // =========================================================
 // AMBIL HEADER
 // =========================================================
 
-function getHeaders(
-  sheet
-) {
-
-  if (
-    sheet.getLastColumn() === 0
-  ) {
-
+function getHeaders(sheet) {
+  if (sheet.getLastColumn() === 0) {
     return [];
-
   }
 
-
   return sheet
-    .getRange(
-
-      1,
-
-      1,
-
-      1,
-
-      sheet.getLastColumn()
-
-    )
+    .getRange(1, 1, 1, sheet.getLastColumn())
     .getValues()[0]
-    .map(
-
-      value =>
-        String(
-          value
-        ).trim()
-
-    );
-
+    .map(value => String(value).trim());
 }
-
 
 // =========================================================
 // FORMAT NIK / KK / NOMOR SEBAGAI TEXT
 // =========================================================
 
-function formatTextColumns(
-  sheet
-) {
+function formatTextColumns(sheet) {
+  const headers = getHeaders(sheet);
 
-  const headers =
-    getHeaders(sheet);
+  headers.forEach((header, index) => {
+    const lower = header.toLowerCase();
+    const harusText =
+      lower.indexOf('nik') !== -1 ||
+      lower.indexOf('no kk') !== -1 ||
+      lower.indexOf('nomor kartu keluarga') !== -1 ||
+      lower.indexOf('nomor meter') !== -1 ||
+      lower.indexOf('nomor langganan') !== -1 ||
+      lower.indexOf('id pelanggan') !== -1 ||
+      lower.indexOf('nomor kontak') !== -1;
 
-
-  headers.forEach(
-    (header, index) => {
-
-
-      const lower =
-        header
-          .toLowerCase();
-
-
-      const harusText =
-
-        lower.indexOf(
-          'nik'
-        ) !== -1
-
-        ||
-
-        lower.indexOf(
-          'no kk'
-        ) !== -1
-
-        ||
-
-        lower.indexOf(
-          'nomor kartu keluarga'
-        ) !== -1
-
-        ||
-
-        lower.indexOf(
-          'nomor meter'
-        ) !== -1
-
-        ||
-
-        lower.indexOf(
-          'nomor langganan'
-        ) !== -1
-
-        ||
-
-        lower.indexOf(
-          'id pelanggan'
-        ) !== -1
-
-        ||
-
-        lower.indexOf(
-          'nomor kontak'
-        ) !== -1;
-
-
-      if (
-        harusText
-      ) {
-
-
-        sheet
-          .getRange(
-
-            2,
-
-            index + 1,
-
-            Math.max(
-
-              sheet.getMaxRows() - 1,
-
-              1
-
-            ),
-
-            1
-
-          )
-          .setNumberFormat(
-            '@'
-          );
-
-      }
-
+    if (harusText) {
+      sheet
+        .getRange(2, index + 1, Math.max(sheet.getMaxRows() - 1, 1), 1)
+        .setNumberFormat('@');
     }
-  );
-
+  });
 }
-
 
 // =========================================================
 // NORMALISASI VALUE
 // =========================================================
 
-function normalizeValue(
-  value
-) {
-
-  if (
-    value === null ||
-    value === undefined
-  ) {
-
+function normalizeValue(value) {
+  if (value === null || value === undefined) {
     return '';
-
   }
 
-
-  if (
-    Array.isArray(
-      value
-    )
-  ) {
-
-    return value.join(
-      ', '
-    );
-
+  if (Array.isArray(value)) {
+    return value.join(', ');
   }
 
-
-  if (
-    value === true
-  ) {
-
+  if (value === true) {
     return 'YA';
-
   }
 
-
-  if (
-    value === false
-  ) {
-
+  if (value === false) {
     return 'TIDAK';
-
   }
 
-
-  if (
-    typeof value ===
-    'object'
-  ) {
-
-
-    if (
-      value.name
-    ) {
-
-      return String(
-        value.name
-      );
-
+  if (typeof value === 'object') {
+    if (value.name) {
+      return String(value.name);
     }
-
-
-    return JSON.stringify(
-      value
-    );
-
+    return JSON.stringify(value);
   }
 
-
-  return String(
-    value
-  );
-
+  return String(value);
 }
-
 
 // =========================================================
 // UBAH KEY JADI HEADER
 // =========================================================
 
-function formatHeader(
-  key
-) {
-
-  return String(
-    key
-  )
-    .replace(
-      /_/g,
-      ' '
-    )
-    .replace(
-      /\b\w/g,
-      char =>
-        char.toUpperCase()
-    );
-
+function formatHeader(key) {
+  return String(key)
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
 }
-
 
 // =========================================================
 // KEY FOTO
 // =========================================================
 
-function isImageKey(
-  key
-) {
-
-  return [
-
-    'foto_kk',
-
-    'foto_rumah_depan',
-
-    'foto_rumah_dalam',
-
-    'foto_toilet_wc'
-
-  ].includes(
-    key
-  );
-
+function isImageKey(key) {
+  return PHOTO_FIELDS.some(field => field.key === key);
 }
-
 
 // =========================================================
 // CEK TRUE / YA
 // =========================================================
 
-function isTrue(
-  value
-) {
-
-  const normalized =
-    String(
-      value
-    )
-      .toLowerCase();
-
-
+function isTrue(value) {
+  const normalized = String(value).toLowerCase();
   return (
-
-    value === true
-
-    ||
-
-    value === 1
-
-    ||
-
-    value === '1'
-
-    ||
-
-    normalized ===
-      'true'
-
-    ||
-
-    normalized ===
-      'ya'
-
+    value === true ||
+    value === 1 ||
+    value === '1' ||
+    normalized === 'true' ||
+    normalized === 'ya'
   );
-
 }
-
 
 // =========================================================
 // CLEAN TEXT
 // =========================================================
 
-function cleanText(
-  value
-) {
-
-  if (
-    value === null ||
-    value === undefined
-  ) {
-
+function cleanText(value) {
+  if (value === null || value === undefined) {
     return '';
-
   }
-
-
-  return String(
-    value
-  ).trim();
-
+  return String(value).trim();
 }
-
 
 // =========================================================
 // FILE NAME
 // =========================================================
 
-function sanitizeFileName(
-  value
-) {
-
-  return String(
-    value || ''
-  )
-    .replace(
-      /[^a-zA-Z0-9_-]/g,
-      '_'
-    );
-
+function sanitizeFileName(value) {
+  return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '_');
 }
-
-
-// =========================================================
-// EXTENSION
-// =========================================================
-
-function getExtension(
-  name,
-  mimeType
-) {
-
-  if (
-    name &&
-    name.indexOf('.') !== -1
-  ) {
-
-    return (
-      '.' +
-      name
-        .split('.')
-        .pop()
-        .toLowerCase()
-    );
-
-  }
-
-
-  if (
-    mimeType ===
-    'image/png'
-  ) {
-
-    return '.png';
-
-  }
-
-
-  if (
-    mimeType ===
-    'image/webp'
-  ) {
-
-    return '.webp';
-
-  }
-
-
-  return '.jpg';
-
-}
-
 
 // =========================================================
 // JSON RESPONSE
 // =========================================================
 
-function jsonResponse(
-  obj
-) {
-
+function jsonResponse(obj) {
   return ContentService
-    .createTextOutput(
-
-      JSON.stringify(
-        obj
-      )
-
-    )
-    .setMimeType(
-
-      ContentService
-        .MimeType
-        .JSON
-
-    );
-
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
-
-// =====================================================
-// VALIDASI DUPLIKAT NIK KEPALA KELUARGA
-// =====================================================
-function validateNIKKepalaDuplikat(sheet, nikKepala) {
-
-  if (!nikKepala) return false;
-
-  const headers = getHeaders(sheet);
-
-  const nikColumn = headers.findIndex(header =>
-    String(header)
-      .toLowerCase()
-      .replace(/_/g, ' ')
-      .includes('nik kepala keluarga')
-  );
-
-  if (nikColumn === -1) return false;
-
-  if (sheet.getLastRow() <= 1) return false;
-
-  const existingNik = sheet
-    .getRange(2, nikColumn + 1, sheet.getLastRow() - 1, 1)
-    .getValues()
-    .flat()
-    .map(v => String(v).trim());
-
-  return existingNik.includes(String(nikKepala).trim());
-}
-
-
-// =====================================================
-// CARI BARIS BERDASARKAN NIK KEPALA KELUARGA
-// =====================================================
-function findRowByNikKepala(sheet, nikKepala) {
-
-  const headers = getHeaders(sheet);
-
-  const nikColumn = headers.findIndex(header =>
-    String(header)
-      .toLowerCase()
-      .replace(/_/g, ' ')
-      .includes('nik kepala keluarga')
-  );
-
-  if (nikColumn === -1) return null;
-
-  if (sheet.getLastRow() <= 1) return null;
-
-  const values = sheet
-    .getRange(
-      2,
-      nikColumn + 1,
-      sheet.getLastRow() - 1,
-      1
-    )
-    .getValues()
-    .flat();
-
-  for (let i = 0; i < values.length; i++) {
-    if (
-      String(values[i]).trim() ===
-      String(nikKepala).trim()
-    ) {
-      return i + 2;
-    }
-  }
-
-  return null;
-}
-
 
 // =====================================================
 // UPSERT BERDASARKAN NIK + NO KK KEPALA KELUARGA
 // =====================================================
-function findRowByNikDanKK(sheet, nikKepala, noKK) {
 
+function findRowByNikDanKK(sheet, nikKepala, noKK) {
   const headers = getHeaders(sheet);
 
   const nikColumn = headers.findIndex(header =>
@@ -1588,18 +557,9 @@ function findRowByNikDanKK(sheet, nikKepala, noKK) {
 }
 
 // =====================================================
-// BACKWARD COMPATIBILITY
-// Mencegah error deployment lama yang masih memanggil nama lama
-// validateNikKepalaDuplikat
-// =====================================================
-function validateNikKepalaDuplikat(sheet, nikKepala) {
-  return validateNIKKepalaDuplikat(sheet, nikKepala);
-}
-
-
-// =====================================================
 // VALIDASI FORMAT NIK
 // =====================================================
+
 function validateNikFormat(nik) {
   if (!nik) {
     throw new Error('NIK Kepala Keluarga kosong.');

@@ -8,7 +8,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- opsional: OCR Tesseract CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
         tailwind.config = {
             theme: {
@@ -827,7 +828,7 @@ input, select, textarea, button {
 <div class="bg-white rounded-2xl shadow-soft p-5 md:p-7 border border-slate-100 space-y-6">
 <h4 class="text-sm font-bold text-brand-600 uppercase tracking-wider flex items-center gap-2"><i class="ph-fill ph-camera text-lg"></i> Dokumen Pendukung</h4>
 <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 leading-relaxed">
-<div class="flex items-start gap-2"><i class="ph-fill ph-map-pin text-lg mt-0.5 shrink-0"></i><div><div class="mb-2"><span class="inline-flex items-center rounded-full bg-white/80 border border-amber-200 px-2 py-0.5 text-[10px] font-bold tracking-wide">FIX FOTO v5</span></div><strong>Geotag hanya wajib untuk foto kondisi rumah.</strong><br/>Foto KK boleh foto biasa. Foto rumah tampak depan, rumah tampak dalam, dan Toilet/WC wajib menggunakan aplikasi geotagging. Sistem menerima GPS dari metadata EXIF atau cap visual <em>GPS Map Camera</em> yang menampilkan Lat/Long seperti contoh foto lapangan.</div></div>
+<div class="flex items-start gap-2"><i class="ph-fill ph-map-pin text-lg mt-0.5 shrink-0"></i><div><div class="mb-2"><span class="inline-flex items-center rounded-full bg-white/80 border border-amber-200 px-2 py-0.5 text-[10px] font-bold tracking-wide">FIX v6</span></div><strong>Geotag hanya wajib untuk foto kondisi rumah.</strong><br/>Foto KK boleh foto biasa. Foto rumah tampak depan, rumah tampak dalam, dan Toilet/WC wajib menggunakan aplikasi geotagging. Sistem menerima GPS dari metadata EXIF atau cap visual <em>GPS Map Camera</em> yang menampilkan Lat/Long seperti contoh foto lapangan.</div></div>
 </div>
 <div class="grid grid-cols-1 gap-5">
 <div><label class="block font-medium text-slate-700 text-sm mb-2">Foto Kartu Keluarga (jelas dan tidak terpotong)</label><div class="flex flex-col sm:flex-row gap-2"><input id="input-foto-kk" accept="image/*,.jpg,.jpeg,.png" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" data-geotag-required="false" name="foto_kk" required="" type="file"/><button type="button" class="camera-capture-btn shrink-0 inline-flex items-center justify-center gap-2 bg-slate-100 border border-slate-200 text-slate-700 font-semibold rounded-xl px-4 py-3 text-sm hover:bg-slate-200 transition-colors" data-target-input="input-foto-kk"><i class="ph-bold ph-camera"></i> Kamera</button></div><p class="mt-2 text-xs text-slate-500"><i class="ph-bold ph-image"></i> Foto KK boleh foto biasa — geotag tidak diwajibkan.</p></div>
@@ -1177,30 +1178,145 @@ input, select, textarea, button {
 
         const isGeotagRequired = (input) => input?.dataset?.geotagRequired === 'true';
 
-        // FIX v5: File/Blob dari picker Android tidak pernah disimpan untuk dipakai saat Ringkasan/Kirim.
-        // File dibaca SATU KALI di event change, diubah menjadi ArrayBuffer + data URL plain string,
-        // lalu reference input file langsung dilepas. Dengan begitu Brave/Chrome tidak perlu membaca
-        // kembali content:// URI yang izinnya dapat kadaluarsa.
-        const arrayBufferToDataUrl = (buffer, mime = 'image/jpeg') => {
-            const bytes = new Uint8Array(buffer);
-            const chunkSize = 0x8000;
-            let binary = '';
-            for (let i = 0; i < bytes.length; i += chunkSize) {
-                binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunkSize, bytes.length)));
+        // FIX v6: Kompresi foto otomatis lewat canvas sebelum menjadi dataUrl.
+        // Sisi terpanjang maks 1600 px, kualitas JPEG 0.8 menggunakan createImageBitmap dengan fallback Image.
+        // ArrayBuffer / binary string besar tidak disimpan di memori agar cepat di-GC.
+        const compressImageToDataUrl = async (blob) => {
+            let imgSource = null;
+            let width = 0;
+            let height = 0;
+            let isBitmap = false;
+
+            if (typeof createImageBitmap === 'function') {
+                try {
+                    imgSource = await createImageBitmap(blob);
+                    width = imgSource.width;
+                    height = imgSource.height;
+                    isBitmap = true;
+                } catch (_) {
+                    imgSource = null;
+                }
             }
-            return `data:${mime};base64,${btoa(binary)}`;
+
+            if (!imgSource) {
+                imgSource = await new Promise((resolve, reject) => {
+                    const img = new Image();
+                    let url = '';
+                    try {
+                        url = URL.createObjectURL(blob);
+                    } catch (_) {
+                        url = '';
+                    }
+
+                    if (url) {
+                        img.onload = () => {
+                            URL.revokeObjectURL(url);
+                            resolve(img);
+                        };
+                        img.onerror = () => {
+                            URL.revokeObjectURL(url);
+                            reject(new Error('Gagal memuat gambar untuk kompresi.'));
+                        };
+                        img.src = url;
+                    } else if (typeof FileReader !== 'undefined') {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            img.onload = () => resolve(img);
+                            img.onerror = () => reject(new Error('Gagal memuat elemen gambar.'));
+                            img.src = reader.result;
+                        };
+                        reader.onerror = () => reject(new Error('Gagal membaca blob foto.'));
+                        reader.readAsDataURL(blob);
+                    } else {
+                        reject(new Error('Lingkungan tidak mendukung pemuatan gambar.'));
+                    }
+                });
+                width = imgSource.naturalWidth || imgSource.width || 0;
+                height = imgSource.naturalHeight || imgSource.height || 0;
+            }
+
+            const maxDim = 1600;
+            let targetWidth = width || maxDim;
+            let targetHeight = height || maxDim;
+
+            if (width > maxDim || height > maxDim) {
+                if (width >= height) {
+                    targetWidth = maxDim;
+                    targetHeight = Math.round((height * maxDim) / width);
+                } else {
+                    targetHeight = maxDim;
+                    targetWidth = Math.round((width * maxDim) / height);
+                }
+            }
+
+            let canvas = null;
+            let ctx = null;
+            try {
+                canvas = document.createElement('canvas');
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                ctx = canvas.getContext('2d');
+                if (ctx && imgSource) {
+                    ctx.drawImage(imgSource, 0, 0, targetWidth, targetHeight);
+                }
+            } catch (_) {
+                ctx = null;
+            }
+
+            if (isBitmap && typeof imgSource.close === 'function') {
+                imgSource.close();
+            }
+
+            const mime = 'image/jpeg';
+            let dataUrl = '';
+            if (canvas && typeof canvas.toDataURL === 'function') {
+                try {
+                    dataUrl = canvas.toDataURL(mime, 0.8);
+                } catch (_) {
+                    dataUrl = '';
+                }
+            }
+
+            // Fallback dengan FileReader jika canvas toDataURL tidak didukung atau kosong
+            if (!dataUrl || dataUrl === 'data:,' || typeof dataUrl !== 'string') {
+                if (typeof FileReader !== 'undefined') {
+                    dataUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = () => reject(new Error('Gagal membaca data URL foto.'));
+                        reader.readAsDataURL(blob);
+                    });
+                } else {
+                    throw new Error('Gagal menghasilkan data URL gambar.');
+                }
+            }
+
+            const commaIdx = dataUrl.indexOf(',');
+            const base64Str = commaIdx !== -1 ? dataUrl.slice(commaIdx + 1) : dataUrl;
+            let padding = 0;
+            if (base64Str.endsWith('==')) padding = 2;
+            else if (base64Str.endsWith('=')) padding = 1;
+            const compressedSize = Math.max(0, Math.floor((base64Str.length * 3) / 4) - padding);
+
+            return {
+                dataUrl,
+                type: mime,
+                size: compressedSize
+            };
         };
 
         const snapshotSelectedPhoto = async (file) => {
             if (!file) throw new Error('File foto tidak ditemukan.');
-            const buffer = await file.arrayBuffer();
+            // Foto asli (workingBlob) tetap dipakai untuk cek EXIF dan OCR geotag
             const mime = file.type || 'image/jpeg';
-            const workingBlob = new Blob([buffer], { type: mime });
+            const workingBlob = file instanceof Blob ? file : new Blob([file], { type: mime });
+            const compressed = await compressImageToDataUrl(workingBlob);
+
             const snapshot = {
                 name: file.name || 'foto.jpg',
-                type: mime,
-                size: file.size || buffer.byteLength,
-                dataUrl: arrayBufferToDataUrl(buffer, mime)
+                type: compressed.type,
+                size: compressed.size,
+                dataUrl: compressed.dataUrl
             };
             return { snapshot, workingBlob };
         };
@@ -1373,6 +1489,7 @@ input, select, textarea, button {
             }
         };
 
+        // opsional: loadImageForOcr (Tesseract OCR helper)
         const loadImageForOcr = async (file) => {
             if (typeof createImageBitmap === 'function') {
                 try { return await createImageBitmap(file); } catch (_) {}
@@ -1386,6 +1503,7 @@ input, select, textarea, button {
             });
         };
 
+        // opsional: readVisualGeotag (Tesseract OCR visual geotag reader)
         const readVisualGeotag = async (file) => {
             if (!window.Tesseract || typeof window.Tesseract.recognize !== 'function') {
                 return { valid: false, reason: 'Pemeriksa cap GPS Map Camera belum berhasil dimuat. Periksa koneksi internet lalu coba lagi.' };
@@ -2058,16 +2176,25 @@ input, select, textarea, button {
 
         // --- Final Submit Action ---
         const btnConfirm = document.getElementById('btn-confirm-submit');
+        let isSubmitting = false;
+
         btnConfirm.addEventListener('click', async () => {
+            if (isSubmitting || btnConfirm.disabled) return;
+
             if (!validateAllData()) {
                 closeModal();
                 return;
             }
+
+            isSubmitting = true;
+            btnConfirm.disabled = true;
             const originalHTML = btnConfirm.innerHTML;
             btnConfirm.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> Memproses...';
-            btnConfirm.disabled = true;
 
             let submitPhase = 'menyiapkan data';
+            let payloadMB = '0.00';
+            let timeoutId = null;
+
             try {
                 // Bangun ulang dokumen dari CACHE MEMORI. Tidak menyentuh input.files.
                 finalPayload.dokumen = extractValuesCached(document.getElementById('sec-5'));
@@ -2078,30 +2205,65 @@ input, select, textarea, button {
                     throw new Error('Payload kosong atau tidak valid.');
                 }
 
+                const payloadBytes = new Blob([requestBody]).size;
+                payloadMB = (payloadBytes / (1024 * 1024)).toFixed(2);
+
+                if (payloadBytes > 20 * 1024 * 1024) {
+                    throw new Error(`Ukuran data terlalu besar (${payloadMB} MB). Batas maksimum pengiriman adalah 20 MB.`);
+                }
+
                 submitPhase = 'mengirim ke server';
-                const res = await fetch('https://script.google.com/macros/s/AKfycbwMly_eKkNBxA8B-P_RAjew3Nw_d-Nfat0FxEc4UWbCHoZcNyJg25rR0aNwAQ5qdm6G/exec', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-                    body: requestBody
-                });
+                const controller = new AbortController();
+                timeoutId = setTimeout(() => {
+                    controller.abort();
+                }, 120000);
+
+                let res;
+                try {
+                    res = await fetch('https://script.google.com/macros/s/AKfycbwMly_eKkNBxA8B-P_RAjew3Nw_d-Nfat0FxEc4UWbCHoZcNyJg25rR0aNwAQ5qdm6G/exec', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                        body: requestBody,
+                        signal: controller.signal
+                    });
+                } catch (fetchErr) {
+                    if (fetchErr.name === 'AbortError') {
+                        throw new Error('Koneksi time out (120 detik). Server belum merespons.');
+                    }
+                    throw new Error(`Tidak ada koneksi internet atau koneksi terputus (${fetchErr.message || 'Failed to fetch'}).`);
+                } finally {
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                        timeoutId = null;
+                    }
+                }
 
                 submitPhase = 'membaca respons server';
-                const responseText = await res.text();
+                let responseText = '';
+                try {
+                    responseText = await res.text();
+                } catch (readErr) {
+                    throw new Error(`Gagal membaca respons dari server: ${readErr.message || readErr}`);
+                }
+
                 let responseData;
                 try {
                     responseData = JSON.parse(responseText);
                 } catch (parseError) {
-                    throw new Error('Respons server tidak valid. Pastikan deployment Google Apps Script sudah diperbarui.');
+                    const preview = (responseText || '').slice(0, 150).replace(/\s+/g, ' ').trim();
+                    throw new Error(`Server tidak mengembalikan respons JSON yang valid (${preview ? `cuplikan: "${preview}"` : 'respons kosong'}). Pastikan deployment Google Apps Script sudah diperbarui dan diakses oleh "Anyone".`);
                 }
 
+                submitPhase = 'validasi server';
                 if (!res.ok || responseData.success === false) {
-                    throw new Error(responseData.error || `Server error (${res.status})`);
+                    const serverMsg = responseData.error || `HTTP ${res.status}`;
+                    throw new Error(`Server menolak: ${serverMsg}`);
                 }
 
                 // Kompatibel dengan Apps Script lama maupun baru:
                 // sukses bila server mengirim id ATAU success:true.
                 if (!responseData.id && responseData.success !== true) {
-                    throw new Error(responseData.error || 'Server tidak mengembalikan status sukses.');
+                    throw new Error(`Server menolak: ${responseData.error || 'Server tidak mengembalikan status sukses.'}`);
                 }
 
                 btnConfirm.innerHTML = '<i class="ph-bold ph-check-circle"></i> Selesai';
@@ -2110,22 +2272,22 @@ input, select, textarea, button {
                     closeModal();
                     btnConfirm.innerHTML = originalHTML;
                     btnConfirm.disabled = false;
+                    isSubmitting = false;
                     document.querySelector('main').scrollTo({ top: 0, behavior: 'smooth' });
                 }, 1000);
             } catch (err) {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
                 const detail = err && err.message ? err.message : String(err);
-                alert(`Gagal pada tahap ${submitPhase}: ${detail}`);
+                alert(`Gagal pada tahap ${submitPhase} (Ukuran payload: ${payloadMB} MB): ${detail}`);
                 btnConfirm.innerHTML = originalHTML;
                 btnConfirm.disabled = false;
+                isSubmitting = false;
             }
         });
     </script>
-
-
-<script>
-// FIX v5: input file dilepas segera setelah bytes tersalin; Ringkasan/Kirim memakai plain data URL saja.
-// Pengiriman dilakukan hanya melalui tombol Ringkasan -> Kirim Data Final dengan cache foto di memori.
-</script>
 
 
 </body>
